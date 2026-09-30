@@ -9,11 +9,11 @@ as `status: draft` (CLAUDE.md).
 
 from __future__ import annotations
 
-import uuid
 from datetime import date
 
 from sqlalchemy.orm import Session
 
+from app.audit.rule_receipts import record_rule_engine_result
 from app.rules.engine import resolve_citations
 from app.schemas.abs import AbsChecklistItem, AbsRequest, AbsResult
 from app.schemas.decision_path import DecisionEdge, DecisionNode, DecisionPath
@@ -140,7 +140,7 @@ def build_abs_result(
             )
         )
 
-    evidence = resolve_citations(
+    evidence, chunk_id_by_evidence_id = resolve_citations(
         session, section_keys, corpus_version_id, corpus_version_label, jurisdictions, as_of
     )
     ev_ids_by_section = {span.section_key: eid for eid, span in evidence.items()}
@@ -180,10 +180,23 @@ def build_abs_result(
         else "No mandatory ABS obligation identified for the activities selected."
     )
 
-    return AbsResult(
+    abs_result = AbsResult(
         summary=summary,
         checklist=checklist,
         decision_path=DecisionPath(nodes=nodes, edges=edges, outcome_id="n_outcome"),
         evidence=evidence,
-        receipt_id=f"rcp_{uuid.uuid4().hex[:12]}",
+        receipt_id="",
     )
+    receipt_id = record_rule_engine_result(
+        session,
+        corpus_version_id=corpus_version_id,
+        corpus_version_label=corpus_version_label,
+        endpoint="abs_check",
+        jurisdiction="IN",
+        as_of=as_of,
+        request_payload=request.model_dump(mode="json"),
+        evidence=evidence,
+        chunk_id_by_evidence_id=chunk_id_by_evidence_id,
+        result_payload=abs_result.model_dump(mode="json"),
+    )
+    return abs_result.model_copy(update={"receipt_id": receipt_id})

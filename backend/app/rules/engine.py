@@ -114,13 +114,18 @@ def resolve_citations(
     corpus_version_label: str,
     jurisdictions: list[str],
     as_of: date,
-) -> dict[str, EvidenceSpan]:
+) -> tuple[dict[str, EvidenceSpan], dict[str, str]]:
     """Resolve rule-tree `cite` section_keys to real `EvidenceSpan`s — through the same
     jurisdiction/as-of gate as any other evidence (§6.4 "cite-resolution" step). A section_key
     that doesn't exist yet (an un-ingested Act) is silently skipped, not fabricated — the
     caller ends up with fewer evidence_ids than cites, which is visible in the response.
+
+    Returns `(evidence_by_id, chunk_id_by_evidence_id)` — the second map lets callers build a
+    real audit receipt (`audit/rule_receipts.py`) over these citations, since a receipt needs
+    each span's underlying `chunk_id`, not just its rendered `EvidenceSpan`.
     """
     evidence: dict[str, EvidenceSpan] = {}
+    chunk_id_by_evidence_id: dict[str, str] = {}
     for key in section_keys:
         section = repo.fetch_section_by_key(session, key, corpus_version_id)
         if section is None:
@@ -153,4 +158,5 @@ def resolve_citations(
                 source_url=document.source_url,
                 pdf_url=f"/v1/documents/{document.short_key}/pdf",
             )
-    return evidence
+            chunk_id_by_evidence_id[ev_id] = str(chunk.id)
+    return evidence, chunk_id_by_evidence_id

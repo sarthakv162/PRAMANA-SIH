@@ -6,12 +6,17 @@ Seed data only (~20 plants, 10 classical formulations, 3 watchlist cases) — fa
 
 from __future__ import annotations
 
-import uuid
+from datetime import date
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
 
+from app.audit.rule_receipts import record_rule_engine_result
 from app.config import get_settings
+from app.core.db import get_session
+from app.core.errors import ApiError
 from app.core.fixtures import load_fixture
+from app.retrieval.repo import live_corpus_version
 from app.schemas.formulation import Formulation
 from app.schemas.tk import (
     NormalizedIngredient,
@@ -32,10 +37,17 @@ router = APIRouter(tags=["tk"])
 
 
 @router.post("/tk-radar", response_model=TkRadar)
-async def tk_radar(formulation: Formulation) -> TkRadar:
+async def tk_radar(
+    formulation: Formulation, session: Session = Depends(get_session)
+) -> TkRadar:
     settings = get_settings()
     if settings.mock_mode:
         return TkRadar.model_validate(load_fixture("tk_radar.json"))
+
+    version = live_corpus_version(session)
+    if version is None:
+        raise ApiError(code="no_corpus", message="no live corpus_version", status_code=503)
+    corpus_version_id, corpus_version_label = version
 
     names = [i.name for i in formulation.ingredients]
 
@@ -87,11 +99,24 @@ async def tk_radar(formulation: Formulation) -> TkRadar:
         for c in matching_watchlist_hits(names)
     ]
 
-    return TkRadar(
+    tk_radar_result = TkRadar(
         normalized_ingredients=normalized,
         matches=matches_out,
         radar=radar,
         tkdl_query=TkdlQuery.model_validate(tkdl),
         watchlist_hits=watchlist_hits,
-        receipt_id=f"rcp_{uuid.uuid4().hex[:12]}",
+        receipt_id="",
     )
+    receipt_id = record_rule_engine_result(
+        session,
+        corpus_version_id=corpus_version_id,
+        corpus_version_label=corpus_version_label,
+        endpoint="tk_radar",
+        jurisdiction="IN",
+        as_of=date.today(),
+        request_payload=formulation.model_dump(mode="json"),
+        evidence={},
+        chunk_id_by_evidence_id={},
+        result_payload=tk_radar_result.model_dump(mode="json"),
+    )
+    return tk_radar_result.model_copy(update={"receipt_id": receipt_id})

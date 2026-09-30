@@ -9,13 +9,15 @@ schema has no field for it.
 
 from __future__ import annotations
 
+import uuid
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any
 
 import sqlalchemy as sa
 from sqlalchemy.orm import Session
 
-from app.audit.chain import append_entry, verify_chain_segment
+from app.audit.chain import append_entry, entry_for_request, verify_chain_segment
 from app.audit.merkle import merkle_proof, verify_proof
 from app.core.hashing import canonical_json, sha256_hex
 from app.retrieval import repo
@@ -46,10 +48,16 @@ def build_receipt(
     model_ids: ModelIds,
     prompt_version: str,
     result_payload: dict[str, Any],
+    request_payload: dict[str, Any] | None = None,
 ) -> Receipt:
     """Appends one hash-chain entry and returns the public `Receipt` for it. `result_payload`
-    is the rendered AnswerCard/RefusalCard (as a dict) — its hash goes in the chain entry so
-    tampering with a stored result, not just the corpus, is detectable.
+    is the rendered response (AnswerCard/RefusalCard/ClassifyResult/PatentRisk/AbsResult/
+    TkRadar, as a dict) — its hash goes in the chain entry so tampering with a stored result,
+    not just the corpus, is detectable. The full payload is also stored verbatim (not just its
+    hash) so `/dossier` can assemble a document from stored results without re-running the
+    pipeline (§6.11). `request_payload`, when given, is the structured (non-free-text) input
+    that produced the result — e.g. a `Formulation` — never the raw natural-language query
+    text, which invariant I4 forbids persisting.
     """
     entry: dict[str, Any] = {
         "request_id": request_id,
@@ -63,6 +71,8 @@ def build_receipt(
         "model_ids": model_ids.model_dump(),
         "prompt_version": prompt_version,
         "result_hash": sha256_hex(canonical_json(result_payload)),
+        "result": result_payload,
+        "request_payload": request_payload,
         "ts": datetime.now(UTC).isoformat(),
     }
     chain_entry = append_entry(session, request_id, entry)
@@ -160,3 +170,33 @@ def verify_receipt(session: Session, receipt_id: str) -> VerifyResult | None:
             )
 
     return VerifyResult(chain_valid=chain_valid, corpus_root=corpus_root, spans=span_results)
+
+
+@dataclass
+class StoredResult:
+    """A previously-rendered response, re-fetched by `request_id` for `/dossier` (§6.11) —
+    built from what `build_receipt` stored, never by re-running the pipeline.
+    """
+
+    request_id: str
+    receipt_id: str
+    entry_hash: str
+    result: dict[str, Any]
+    request_payload: dict[str, Any] | None
+
+
+def latest_result_for_request(session: Session, request_id: str) -> StoredResult | None:
+    try:
+        uuid.UUID(request_id)
+    except ValueError:
+        return None
+    entry = entry_for_request(session, request_id)
+    if entry is None or "result" not in entry.payload:
+        return None
+    return StoredResult(
+        request_id=entry.request_id,
+        receipt_id=_receipt_id(entry.seq),
+        entry_hash=entry.entry_hash,
+        result=entry.payload["result"],
+        request_payload=entry.payload.get("request_payload"),
+    )

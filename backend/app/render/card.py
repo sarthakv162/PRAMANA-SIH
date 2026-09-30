@@ -5,7 +5,6 @@ structured objects (CLAUDE.md, §3 working agreement).
 
 from __future__ import annotations
 
-import uuid
 from pathlib import Path
 
 import yaml
@@ -28,10 +27,6 @@ from app.verification.confidence import ConfidenceOutcome
 DISCLAIMER = "Informational, not legal advice."
 
 _JURISDICTION_HEADINGS = {"IN": "India", "INTL": "International"}
-
-
-def _new_request_id() -> str:
-    return f"req_{uuid.uuid4().hex[:20]}"
 
 
 def build_refusal(

@@ -95,7 +95,7 @@ async def run_query(request: QueryRequest) -> AsyncIterator[dict[str, Any]]:
     """Yields dicts shaped `{"event": "stage"|"result"|"error"|"done", "data": {...}}` —
     `api/query.py` is the only place these get turned into actual SSE wire bytes.
     """
-    request_id = f"req_{uuid.uuid4().hex[:20]}"
+    request_id = str(uuid.uuid4())
     state = RequestState(request_id=request_id, raw_query=request.query, request=request)
     runner = _StageRunner()
     t0 = time.monotonic()

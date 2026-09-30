@@ -7,11 +7,11 @@ are backed by real ingested text.
 
 from __future__ import annotations
 
-import uuid
 from datetime import date
 
 from sqlalchemy.orm import Session
 
+from app.audit.rule_receipts import record_rule_engine_result
 from app.rules.engine import resolve_citations
 from app.schemas.classify import (
     AbsPosture,
@@ -93,7 +93,7 @@ def next_step(
     cite_keys = []
     if category == ClassifyCategory.CLASSICAL:
         cite_keys = ["patents_act_1970#s3(p)", "biological_diversity_act_2002#s3"]
-    evidence = resolve_citations(
+    evidence, chunk_id_by_evidence_id = resolve_citations(
         session, cite_keys, corpus_version_id, corpus_version_label, jurisdictions, as_of
     )
     ev_by_key = {span.section_key: eid for eid, span in evidence.items()}
@@ -156,7 +156,7 @@ def next_step(
     ]
     edges = [DecisionEdge(**{"from": "n1", "to": "n2", "label": request.answers.get(_Q1, "")})]
 
-    return ClassifyResult(
+    classify_result = ClassifyResult(
         category=category,
         category_label=CATEGORY_LABELS[category],
         requirements=requirements,
@@ -164,5 +164,18 @@ def next_step(
         abs_posture=abs_posture,
         decision_path=DecisionPath(nodes=nodes, edges=edges, outcome_id="n2"),
         evidence=evidence,
-        receipt_id=f"rcp_{uuid.uuid4().hex[:12]}",
+        receipt_id="",
     )
+    receipt_id = record_rule_engine_result(
+        session,
+        corpus_version_id=corpus_version_id,
+        corpus_version_label=corpus_version_label,
+        endpoint="classify",
+        jurisdiction="IN",
+        as_of=as_of,
+        request_payload=request.model_dump(mode="json"),
+        evidence=evidence,
+        chunk_id_by_evidence_id=chunk_id_by_evidence_id,
+        result_payload=classify_result.model_dump(mode="json"),
+    )
+    return classify_result.model_copy(update={"receipt_id": receipt_id})
