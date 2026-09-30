@@ -1,0 +1,12 @@
+{
+  "chain_valid": true,
+  "corpus_root": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+  "spans": [
+    {
+      "evidence_id": "ev_7f3a9c",
+      "sha256": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "in_corpus": true,
+      "merkle_proof_valid": false
+    }
+  ]
+}

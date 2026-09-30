@@ -1,0 +1,36 @@
+sources:
+- id: patents_act_1970
+  title: The Patents Act, 1970
+  jurisdiction: IN
+  doc_type: statute
+  issuer: Government of India
+  tier: A
+  language: en
+  url: https://ipindia.gov.in/frontend/pdf/patents/1_113_1_The_Patents_Act__1970___incorporating_all_amendments_till_1-08-2024.pdf
+  source_note: 'Consolidated text as amended, published by the Office of the Controller
+    General of Patents, Designs & Trade Marks (ipindia.gov.in) — the same authority
+    that administers the Act. Retrieved 2026-09-30.
+
+    '
+  sha256: d57084888c69d70b16ed6a52a612363a526994203effa58880a26faaaa6e0678
+  in_force_from: '1970-04-20'
+  in_force_to: null
+- id: biological_diversity_act_2002
+  title: The Biological Diversity Act, 2002
+  jurisdiction: IN
+  doc_type: statute
+  issuer: Government of India
+  tier: A
+  language: en
+  url: https://nationalcampa.nic.in/dashboard/ActAndRulesPDF/6967405c99df8.pdf
+  source_note: >
+    Hosted by the National Compensatory Afforestation Fund Management and Planning
+    Authority (nationalcampa.nic.in), a Government of India body — mirrors the Act as
+    published with the Biological Diversity Rules, 2004 appended; only the Act's own
+    chapters/sections are ingested (chunker stops matching once section numbering resets
+    for the Rules). Prefer indiacode.nic.in once it's reachable from the ingest host; the
+    text should be cross-checked against it before this is promoted past staged.
+    Retrieved 2026-09-30.
+  sha256: null
+  in_force_from: '2003-02-05'
+  in_force_to: null

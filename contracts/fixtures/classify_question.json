@@ -1,0 +1,52 @@
+{
+  "type": "question",
+  "question_id": "q_first_schedule",
+  "text": "Is your formulation, including its ingredients and method of preparation, described in one of the authoritative books listed in the First Schedule to the Drugs and Cosmetics Rules, 1945?",
+  "why_asked": "This determines whether the product is a classical (generic) Ayurvedic medicine or a proprietary/new formulation, which changes the entire compliance path.",
+  "input": {
+    "kind": "boolean",
+    "options": [
+      {
+        "value": "yes",
+        "label": "Yes"
+      },
+      {
+        "value": "no",
+        "label": "No"
+      }
+    ]
+  },
+  "evidence_ids": [
+    "ev_dnc001"
+  ],
+  "evidence": {
+    "ev_dnc001": {
+      "id": "ev_dnc001",
+      "doc_id": "drugs_cosmetics_act_1940",
+      "doc_title": "The Drugs and Cosmetics Act, 1940 & Rules, 1945",
+      "doc_type": "statute",
+      "jurisdiction": "IN",
+      "citation_label": "Drugs & Cosmetics Rules, 1945 — First Schedule",
+      "section_key": "drugs_cosmetics_rules_1945#first_schedule",
+      "section_path": [
+        "First Schedule"
+      ],
+      "page": 112,
+      "page_end": 112,
+      "char_start": 1200,
+      "char_end": 1409,
+      "text": "formulations described in the authoritative books of Ayurveda, Siddha and Unani systems listed in the First Schedule are treated as classical/generic medicines for licensing purposes (illustrative paraphrase).",
+      "sha256": "8a6ea1c229edfce96afee897e368ba7a21640ff5cd4ccb733c3431d1910dc517",
+      "effective_from": "1945-08-21",
+      "effective_to": null,
+      "corpus_version": "2026.09.28-a",
+      "source_url": "https://www.indiacode.nic.in/",
+      "pdf_url": "/v1/documents/drugs_cosmetics_act_1940/pdf",
+      "highlights": []
+    }
+  },
+  "progress": {
+    "answered": 0,
+    "estimated_total": 6
+  }
+}

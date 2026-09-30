@@ -1,0 +1,161 @@
+{
+  "type": "answer",
+  "request_id": "req_01JATNKQ3P0000000000BH01",
+  "corpus_version": "2026.09.28-a",
+  "as_of": "2026-09-30",
+  "language": "hi",
+  "detected_language": "hi",
+  "jurisdiction": "BOTH",
+  "sections": [
+    {
+      "jurisdiction": "IN",
+      "heading": "India",
+      "claims": [
+        {
+          "id": "c1",
+          "text": "भारत में, यदि कोई दावा किया गया आविष्कार वस्तुतः पारंपरिक ज्ञान है, तो वह पेटेंट योग्य नहीं है।",
+          "status": "verified",
+          "evidence_ids": [
+            "ev_7f3a9c"
+          ],
+          "checks": {
+            "nli_entail": 0.93,
+            "numbers_ok": true,
+            "dates_ok": true,
+            "negation_ok": true
+          }
+        }
+      ],
+      "gaps": []
+    },
+    {
+      "jurisdiction": "INTL",
+      "heading": "International",
+      "claims": [
+        {
+          "id": "c2",
+          "text": "TRIPS समझौते के तहत, पेटेंट सामान्यतः सभी प्रौद्योगिकी क्षेत्रों के आविष्कारों के लिए उपलब्ध हैं, जब तक कि अपवाद लागू न हों।",
+          "status": "partial",
+          "evidence_ids": [
+            "ev_trips27"
+          ],
+          "checks": {
+            "nli_entail": 0.62,
+            "numbers_ok": true,
+            "dates_ok": true,
+            "negation_ok": true
+          }
+        }
+      ],
+      "gaps": [
+        {
+          "text": "Fee amounts were not found in the indexed documents.",
+          "status": "not_in_indexed_documents"
+        }
+      ]
+    }
+  ],
+  "evidence": {
+    "ev_7f3a9c": {
+      "id": "ev_7f3a9c",
+      "doc_id": "patents_act_1970",
+      "doc_title": "The Patents Act, 1970",
+      "doc_type": "statute",
+      "jurisdiction": "IN",
+      "citation_label": "Patents Act, 1970 — s.3(p)",
+      "section_key": "patents_act_1970#s3(p)",
+      "section_path": [
+        "Chapter II",
+        "Section 3",
+        "clause (p)"
+      ],
+      "page": 9,
+      "page_end": 9,
+      "char_start": 1200,
+      "char_end": 1444,
+      "text": "an invention which, in effect, is traditional knowledge or which is an aggregation or duplication of known properties of a traditionally known component or components is not an invention within the meaning of this Act (illustrative paraphrase).",
+      "sha256": "0380493b27f8abc6c0848cd3192e2aaa6c1e5157ae7c1e2c90189a666b288692",
+      "effective_from": "1970-04-20",
+      "effective_to": null,
+      "corpus_version": "2026.09.28-a",
+      "source_url": "https://www.indiacode.nic.in/",
+      "pdf_url": "/v1/documents/patents_act_1970/pdf",
+      "highlights": [
+        {
+          "page": 9,
+          "page_width": 595.3,
+          "page_height": 841.9,
+          "rects": [
+            [
+              72.0,
+              310.2,
+              523.1,
+              324.8
+            ],
+            [
+              72.0,
+              325.0,
+              260.4,
+              339.6
+            ]
+          ]
+        }
+      ]
+    },
+    "ev_trips27": {
+      "id": "ev_trips27",
+      "doc_id": "trips_1994",
+      "doc_title": "TRIPS Agreement",
+      "doc_type": "treaty",
+      "jurisdiction": "INTL",
+      "citation_label": "TRIPS Agreement — Art. 27",
+      "section_key": "trips_1994#art27",
+      "section_path": [
+        "Part II",
+        "Section 5",
+        "Article 27"
+      ],
+      "page": 7,
+      "page_end": 7,
+      "char_start": 1200,
+      "char_end": 1467,
+      "text": "patents shall be available for any inventions, whether products or processes, in all fields of technology, subject to the novelty, inventive step and industrial application requirements and the exclusions permitted elsewhere in this Article (illustrative paraphrase).",
+      "sha256": "111a82c9bc94e852d35bdacf79f925086d4c5211c9928586866be066ff5d58b6",
+      "effective_from": "1995-01-01",
+      "effective_to": null,
+      "corpus_version": "2026.09.28-a",
+      "source_url": "https://www.wto.org/",
+      "pdf_url": "/v1/documents/trips_1994/pdf",
+      "highlights": []
+    }
+  },
+  "glossary": [
+    {
+      "term": "traditional knowledge",
+      "gloss": "पारंपरिक ज्ञान",
+      "lang": "hi"
+    }
+  ],
+  "confidence": {
+    "level": "medium",
+    "score": 0.68
+  },
+  "review_recommended": true,
+  "dropped_claims": 1,
+  "translation": {
+    "back_translation_ok": true,
+    "note": null
+  },
+  "suggested_followups": [
+    "क्या यह TRIPS के अपवादों के अंतर्गत आता है?"
+  ],
+  "receipt_id": "rcp_01JATNKQ3P0000000000BH01",
+  "disclaimer": "Informational, not legal advice.",
+  "timings_ms": {
+    "intake": 15,
+    "retrieve": 210,
+    "generate": 2400,
+    "verify": 380,
+    "total": 3100
+  }
+}

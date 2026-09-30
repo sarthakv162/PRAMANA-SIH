@@ -1,0 +1,42 @@
+{
+  "type": "refusal",
+  "request_id": "req_01JATNKQ3P0000000000RF01",
+  "reason": "no_evidence",
+  "message": "The indexed documents don't cover this. I can't answer without a source.",
+  "nearest_sources": [
+    {
+      "id": "ev_dnc001",
+      "doc_id": "drugs_cosmetics_act_1940",
+      "doc_title": "The Drugs and Cosmetics Act, 1940 & Rules, 1945",
+      "doc_type": "statute",
+      "jurisdiction": "IN",
+      "citation_label": "Drugs & Cosmetics Rules, 1945 — First Schedule",
+      "section_key": "drugs_cosmetics_rules_1945#first_schedule",
+      "section_path": [
+        "First Schedule"
+      ],
+      "page": 112,
+      "page_end": 112,
+      "char_start": 1200,
+      "char_end": 1409,
+      "text": "formulations described in the authoritative books of Ayurveda, Siddha and Unani systems listed in the First Schedule are treated as classical/generic medicines for licensing purposes (illustrative paraphrase).",
+      "sha256": "8a6ea1c229edfce96afee897e368ba7a21640ff5cd4ccb733c3431d1910dc517",
+      "effective_from": "1945-08-21",
+      "effective_to": null,
+      "corpus_version": "2026.09.28-a",
+      "source_url": "https://www.indiacode.nic.in/",
+      "pdf_url": "/v1/documents/drugs_cosmetics_act_1940/pdf",
+      "highlights": []
+    }
+  ],
+  "escalation": {
+    "available": true,
+    "prefill": {
+      "question": "What is the export duty rate on raw ashwagandha root in 2026?",
+      "jurisdiction": "IN",
+      "as_of": "2026-09-30"
+    }
+  },
+  "receipt_id": "rcp_01JATNKQ3P0000000000RF01",
+  "disclaimer": "Informational, not legal advice."
+}

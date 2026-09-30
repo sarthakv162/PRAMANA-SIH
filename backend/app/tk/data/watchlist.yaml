@@ -1,0 +1,27 @@
+# Seeded biopiracy watchlist (§6.10, §8) — well-documented public cases only. Verify dates
+# and outcomes against the cited source before using in a real deck; these are from memory
+# of widely reported cases, not re-verified against the primary patent-office record here.
+cases:
+  - case: "Turmeric wound-healing patent (US Patent 5,401,504)"
+    jurisdiction: INTL
+    species: ["Curcuma longa"]
+    indication: "wound healing"
+    summary: "US patent granted in 1995 for use of turmeric powder in wound healing, a use documented in traditional Indian medicine for centuries."
+    outcome: "Revoked by the USPTO in 1997 after CSIR (India) filed a re-examination request citing prior art including ancient Ayurvedic texts."
+    source_url: "https://www.uspto.gov/"
+
+  - case: "Neem-based fungicide patent (European Patent EP0436257)"
+    jurisdiction: INTL
+    species: ["Azadirachta indica"]
+    indication: "fungicide / pesticide"
+    summary: "European patent granted for a method of controlling fungal infections using a hydrophobic extract of neem seeds."
+    outcome: "Revoked by the European Patent Office in 2000 following an opposition by India's government and others, on grounds of lack of novelty (prior traditional use)."
+    source_url: "https://www.epo.org/"
+
+  - case: "Basmati rice patent (US Patent 5,663,484, RiceTec Inc.)"
+    jurisdiction: INTL
+    species: ["Oryza sativa (basmati)"]
+    indication: "rice variety / plant breeding"
+    summary: "US patent granted covering certain basmati rice lines and grains, prompting concern in India over the basmati name and germplasm."
+    outcome: "Most of the original claims were withdrawn or amended after India's formal challenge; a few narrow claims survived."
+    source_url: "https://www.uspto.gov/"

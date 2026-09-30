@@ -1,0 +1,7 @@
+backend/            @you
+corpus/             @you
+eval/               @you
+docker-compose.yml  @you
+frontend/           @ritwik
+contracts/          @you @ritwik
+docs/               @you @ritwik

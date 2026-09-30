@@ -1,0 +1,11 @@
+id,name,source_text,ingredients,indications
+cf_001,Haridra Khanda,Bhaishajya Ratnavali,"Curcuma longa;Zingiber officinale;Piper longum","skin disease;allergic cough"
+cf_002,Triphala Churna,Sharangdhara Samhita,"Terminalia chebula;Terminalia bellirica;Phyllanthus emblica","digestion;eye disorders"
+cf_003,Nimba Lepa,Bhavaprakasha,"Azadirachta indica;Curcuma longa","skin disease;wound healing"
+cf_004,Ashwagandharishta,Bhaishajya Ratnavali,"Withania somnifera;Piper nigrum","general debility;rejuvenation"
+cf_005,Trikatu Churna,Sharangdhara Samhita,"Zingiber officinale;Piper nigrum;Piper longum","digestion;respiratory disorders"
+cf_006,Sitopaladi Churna,Sharangdhara Samhita,"Piper longum;Elettaria cardamomum;Cinnamomum verum","cough;respiratory disorders"
+cf_007,Yogaraja Guggulu,Bhaishajya Ratnavali,"Commiphora wightii;Zingiber officinale;Piper longum","joint pain;rheumatism"
+cf_008,Brahmi Ghrita,Ashtanga Hridaya,"Bacopa monnieri;Centella asiatica","memory;nervous disorders"
+cf_009,Guduchi Satva,Bhavaprakasha,"Tinospora cordifolia","fever;immunity"
+cf_010,Shatavari Kalpa,Bhaishajya Ratnavali,"Asparagus racemosus","female reproductive health;rejuvenation"

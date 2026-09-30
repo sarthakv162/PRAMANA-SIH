@@ -1,0 +1,103 @@
+{
+  "type": "answer",
+  "request_id": "req_01JATNKQ3P0000000000IN01",
+  "corpus_version": "2026.09.28-a",
+  "as_of": "2026-09-30",
+  "language": "en",
+  "detected_language": "en",
+  "jurisdiction": "IN",
+  "sections": [
+    {
+      "jurisdiction": "IN",
+      "heading": "India",
+      "claims": [
+        {
+          "id": "c1",
+          "text": "A claimed invention that is in effect traditional knowledge is excluded from patent protection in India.",
+          "status": "verified",
+          "evidence_ids": [
+            "ev_7f3a9c"
+          ],
+          "checks": {
+            "nli_entail": 0.94,
+            "numbers_ok": true,
+            "dates_ok": true,
+            "negation_ok": true
+          }
+        }
+      ],
+      "gaps": []
+    }
+  ],
+  "evidence": {
+    "ev_7f3a9c": {
+      "id": "ev_7f3a9c",
+      "doc_id": "patents_act_1970",
+      "doc_title": "The Patents Act, 1970",
+      "doc_type": "statute",
+      "jurisdiction": "IN",
+      "citation_label": "Patents Act, 1970 — s.3(p)",
+      "section_key": "patents_act_1970#s3(p)",
+      "section_path": [
+        "Chapter II",
+        "Section 3",
+        "clause (p)"
+      ],
+      "page": 9,
+      "page_end": 9,
+      "char_start": 1200,
+      "char_end": 1444,
+      "text": "an invention which, in effect, is traditional knowledge or which is an aggregation or duplication of known properties of a traditionally known component or components is not an invention within the meaning of this Act (illustrative paraphrase).",
+      "sha256": "0380493b27f8abc6c0848cd3192e2aaa6c1e5157ae7c1e2c90189a666b288692",
+      "effective_from": "1970-04-20",
+      "effective_to": null,
+      "corpus_version": "2026.09.28-a",
+      "source_url": "https://www.indiacode.nic.in/",
+      "pdf_url": "/v1/documents/patents_act_1970/pdf",
+      "highlights": [
+        {
+          "page": 9,
+          "page_width": 595.3,
+          "page_height": 841.9,
+          "rects": [
+            [
+              72.0,
+              310.2,
+              523.1,
+              324.8
+            ],
+            [
+              72.0,
+              325.0,
+              260.4,
+              339.6
+            ]
+          ]
+        }
+      ]
+    }
+  },
+  "glossary": [],
+  "confidence": {
+    "level": "high",
+    "score": 0.87
+  },
+  "review_recommended": false,
+  "dropped_claims": 0,
+  "translation": {
+    "back_translation_ok": true,
+    "note": null
+  },
+  "suggested_followups": [
+    "Does my formulation fall under s.3(p)?"
+  ],
+  "receipt_id": "rcp_01JATNKQ3P0000000000IN01",
+  "disclaimer": "Informational, not legal advice.",
+  "timings_ms": {
+    "intake": 12,
+    "retrieve": 180,
+    "generate": 1900,
+    "verify": 310,
+    "total": 2500
+  }
+}

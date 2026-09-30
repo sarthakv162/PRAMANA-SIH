@@ -1,0 +1,93 @@
+# Locked legal/domain terms (§6.3, §8): masked with a placeholder before translation and
+# restored after, so a translation model never rephrases a term of art. `translations` are a
+# first-pass by the assistant, not by a fluent native speaker — §8 explicitly calls for a
+# fluent-speaker review before these ship; treat this file as a draft seed, not a verified
+# glossary. Extend as more corpus documents are ingested and more terms need locking.
+terms:
+  - term_en: traditional knowledge
+    locked: true
+    translations:
+      hi: पारंपरिक ज्ञान
+      ta: பாரம்பரிய அறிவு
+      bn: ঐতিহ্যবাহী জ্ঞান
+      mr: पारंपरिक ज्ञान
+
+  - term_en: geographical indication
+    locked: true
+    translations:
+      hi: भौगोलिक संकेत
+      ta: புவிசார் குறியீடு
+      bn: ভৌগোলিক নির্দেশক
+      mr: भौगोलिक चिन्ह
+
+  - term_en: patent
+    locked: true
+    translations:
+      hi: पेटेंट
+      ta: காப்புரிமை
+      bn: পেটেন্ট
+      mr: पेटंट
+
+  - term_en: biological resource
+    locked: true
+    translations:
+      hi: जैविक संसाधन
+      ta: உயிரியல் வளம்
+      bn: জৈবিক সম্পদ
+      mr: जैविक संसाधन
+
+  - term_en: access and benefit sharing
+    locked: true
+    translations:
+      hi: पहुँच और लाभ साझाकरण
+      ta: அணுகல் மற்றும் பயன் பகிர்வு
+      bn: প্রবেশাধিকার ও সুবিধা ভাগাভাগি
+      mr: उपलब्धता आणि लाभ वाटप
+
+  - term_en: National Biodiversity Authority
+    locked: true
+    translations:
+      hi: राष्ट्रीय जैव विविधता प्राधिकरण
+      ta: தேசிய பல்லுயிர் ஆணையம்
+      bn: জাতীয় জীববৈচিত্র্য কর্তৃপক্ষ
+      mr: राष्ट्रीय जैवविविधता प्राधिकरण
+
+  - term_en: State Biodiversity Board
+    locked: true
+    translations:
+      hi: राज्य जैव विविधता बोर्ड
+      ta: மாநில பல்லுயிர் வாரியம்
+      bn: রাজ্য জীববৈচিত্র্য বোর্ড
+      mr: राज्य जैवविविधता मंडळ
+
+  - term_en: Biodiversity Management Committee
+    locked: true
+    translations:
+      hi: जैव विविधता प्रबंधन समिति
+      ta: பல்லுயிர் மேலாண்மைக் குழு
+      bn: জীববৈচিত্র্য ব্যবস্থাপনা কমিটি
+      mr: जैवविविधता व्यवस्थापन समिती
+
+  - term_en: classical formulation
+    locked: true
+    translations:
+      hi: शास्त्रीय योग
+      ta: பாரம்பரிய மருந்து சூத்திரம்
+      bn: শাস্ত্রীয় ফর্মুলেশন
+      mr: शास्त्रीय संयोग
+
+  - term_en: not an invention
+    locked: false
+    translations:
+      hi: आविष्कार नहीं है
+      ta: கண்டுபிடிப்பு அல்ல
+      bn: উদ্ভাবন নয়
+      mr: आविष्कार नाही
+
+  - term_en: informational, not legal advice
+    locked: true
+    translations:
+      hi: केवल जानकारी हेतु, कानूनी सलाह नहीं
+      ta: தகவலுக்காக மட்டும், சட்ட ஆலோசனை அல்ல
+      bn: শুধুমাত্র তথ্যের জন্য, আইনি পরামর্শ নয়
+      mr: केवळ माहितीसाठी, कायदेशीर सल्ला नाही

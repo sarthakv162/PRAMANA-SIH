@@ -1,0 +1,59 @@
+# Patent risk under Patents Act 1970 s.3(p)/(e)/(d) (§6.8). Every `cite` resolves against
+# the real ingested text (backend/corpus — patents_act_1970). Drafted from the corpus text
+# directly; not reviewed by counsel — treat every reason here as `status: draft` until it is
+# (CLAUDE.md: "don't invent legal content... mark status: draft").
+id: patent_risk
+version: 0.1
+status: draft
+outputs:
+  gauge_from: score
+  thresholds: { low: 0.34, high: 0.67 }
+rules:
+  - id: p_classical_source_match
+    section: "3(p)"
+    when:
+      all:
+        - { field: classical_sources_cited, op: nonempty }
+    weight: 0.5
+    reason: "The formulation cites a classical source; s.3(p) excludes inventions that are, in effect, traditional knowledge or an aggregation/duplication of known properties of a traditionally known component."
+    cite: ["patents_act_1970#s3(p)"]
+
+  - id: e_admixture_no_synergy
+    section: "3(e)"
+    when:
+      all:
+        - { field: ingredients, op: len_gte, value: 2 }
+        - { field: claims_novel_effect, op: eq, value: false }
+    weight: 0.4
+    reason: "Two or more ingredients are combined without a claimed novel/synergistic effect; s.3(e) excludes a substance obtained by mere admixture resulting only in aggregation of the components' known properties."
+    cite: ["patents_act_1970#s3(e)"]
+
+  - id: d_new_form_no_efficacy
+    section: "3(d)"
+    when:
+      all:
+        - { field: is_derivative_of_known_substance, op: eq, value: true }
+        - { field: has_clinical_data, op: eq, value: false }
+    weight: 0.4
+    reason: "The formulation is a new form/derivative of a known substance without clinical data showing enhanced efficacy; s.3(d) excludes mere discovery of a new form of a known substance that doesn't enhance known efficacy."
+    cite: ["patents_act_1970#s3(d)"]
+
+  - id: d_derivative_with_efficacy_lower_risk
+    section: "3(d)"
+    when:
+      all:
+        - { field: is_derivative_of_known_substance, op: eq, value: true }
+        - { field: has_clinical_data, op: eq, value: true }
+    weight: 0.1
+    reason: "Clinical data is claimed for a derivative of a known substance — s.3(d) risk is lower but still turns on whether the data shows enhanced efficacy, which this tool doesn't independently verify."
+    cite: ["patents_act_1970#s3(d)"]
+
+  - id: p_no_novel_effect_and_classical
+    section: "3(p)"
+    when:
+      all:
+        - { field: classical_sources_cited, op: nonempty }
+        - { field: claims_novel_effect, op: eq, value: false }
+    weight: 0.2
+    reason: "No novel effect is claimed over the cited classical source, reinforcing the s.3(p) concern."
+    cite: ["patents_act_1970#s3(p)"]

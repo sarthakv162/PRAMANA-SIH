@@ -1,0 +1,109 @@
+{
+  "type": "tk_radar",
+  "normalized_ingredients": [
+    {
+      "input": "haridra",
+      "canonical_latin": "Curcuma longa",
+      "sanskrit": "haridrā",
+      "regional": [
+        {
+          "lang": "hi",
+          "name": "haldi"
+        },
+        {
+          "lang": "ta",
+          "name": "manjal"
+        }
+      ],
+      "confidence": 0.98
+    },
+    {
+      "input": "neem leaf",
+      "canonical_latin": "Azadirachta indica",
+      "sanskrit": "nimba",
+      "regional": [
+        {
+          "lang": "hi",
+          "name": "neem"
+        },
+        {
+          "lang": "bn",
+          "name": "নিম"
+        }
+      ],
+      "confidence": 0.95
+    }
+  ],
+  "matches": [
+    {
+      "formulation_id": "cf_0042",
+      "name": "Haridra Khanda",
+      "source_text": "Bhaishajya Ratnavali",
+      "similarity": 0.81,
+      "overlap": [
+        "Curcuma longa"
+      ],
+      "missing_in_input": [
+        "Piper longum"
+      ],
+      "extra_in_input": [
+        "Azadirachta indica"
+      ],
+      "indication_match": true,
+      "evidence_ids": []
+    },
+    {
+      "formulation_id": "cf_0107",
+      "name": "Nimba Lepa",
+      "source_text": "Bhavaprakasha",
+      "similarity": 0.64,
+      "overlap": [
+        "Azadirachta indica"
+      ],
+      "missing_in_input": [],
+      "extra_in_input": [
+        "Curcuma longa"
+      ],
+      "indication_match": true,
+      "evidence_ids": []
+    }
+  ],
+  "radar": {
+    "axes": [
+      {
+        "label": "Haridra Khanda",
+        "value": 0.81
+      },
+      {
+        "label": "Nimba Lepa",
+        "value": 0.64
+      }
+    ]
+  },
+  "tkdl_query": {
+    "terms": [
+      "Curcuma longa",
+      "haridra",
+      "haldi",
+      "Azadirachta indica",
+      "nimba",
+      "neem"
+    ],
+    "ipc": [
+      "A61K 36/9066",
+      "A61K 36/54"
+    ],
+    "text": "Ready-to-paste query pack: (Curcuma longa OR haridra OR haldi) AND (Azadirachta indica OR nimba OR neem) AND (A61K 36/9066 OR A61K 36/54)",
+    "note": "TKDL access is restricted; this pack is for use by an authorised examiner or via the applicant's counsel."
+  },
+  "watchlist_hits": [
+    {
+      "case": "Turmeric wound-healing patent (US Patent 5,401,504)",
+      "jurisdiction": "INTL",
+      "summary": "US patent granted on the use of turmeric powder for wound healing.",
+      "outcome": "Revoked in 1997 after India's CSIR challenged it citing prior classical use.",
+      "source_url": "https://www.wipo.int/"
+    }
+  ],
+  "receipt_id": "rcp_01JATNKQ3P0000000000TK01"
+}

@@ -1,0 +1,93 @@
+{
+  "type": "patent_risk",
+  "gauge": "low",
+  "score": 0.18,
+  "per_section": [
+    {
+      "section": "3(p)",
+      "risk": "low",
+      "triggered_rules": [],
+      "reasons": [],
+      "evidence_ids": []
+    },
+    {
+      "section": "3(e)",
+      "risk": "low",
+      "triggered_rules": [],
+      "reasons": [],
+      "evidence_ids": []
+    },
+    {
+      "section": "3(d)",
+      "risk": "low",
+      "triggered_rules": [],
+      "reasons": [
+        "Clinical data demonstrates enhanced efficacy over the known substance."
+      ],
+      "evidence_ids": [
+        "ev_3d4f10"
+      ]
+    }
+  ],
+  "what_would_help": [],
+  "decision_path": {
+    "nodes": [
+      {
+        "id": "n1",
+        "kind": "question",
+        "label": "Does the formulation match a classical source?",
+        "value": "no",
+        "evidence_ids": [],
+        "taken": true
+      },
+      {
+        "id": "n2",
+        "kind": "outcome",
+        "label": "Low overall risk",
+        "value": null,
+        "evidence_ids": [
+          "ev_3d4f10"
+        ],
+        "taken": true
+      }
+    ],
+    "edges": [
+      {
+        "from": "n1",
+        "to": "n2",
+        "label": "no"
+      }
+    ],
+    "outcome_id": "n2"
+  },
+  "evidence": {
+    "ev_3d4f10": {
+      "id": "ev_3d4f10",
+      "doc_id": "patents_act_1970",
+      "doc_title": "The Patents Act, 1970",
+      "doc_type": "statute",
+      "jurisdiction": "IN",
+      "citation_label": "Patents Act, 1970 — s.3(d)",
+      "section_key": "patents_act_1970#s3(d)",
+      "section_path": [
+        "Chapter II",
+        "Section 3",
+        "clause (d)"
+      ],
+      "page": 9,
+      "page_end": 9,
+      "char_start": 1400,
+      "char_end": 1626,
+      "text": "the mere discovery of a new form of a known substance which does not result in the enhancement of the known efficacy of that substance is not patentable, absent a significant difference in properties (illustrative paraphrase).",
+      "sha256": "3d14af145033092dde137f54d9567c133437e9caf74004ab0f1533ebfee80b30",
+      "effective_from": "1970-04-20",
+      "effective_to": null,
+      "corpus_version": "2026.09.28-a",
+      "source_url": "https://www.indiacode.nic.in/",
+      "pdf_url": "/v1/documents/patents_act_1970/pdf",
+      "highlights": []
+    }
+  },
+  "receipt_id": "rcp_01JATNKQ3P0000000000PR02",
+  "disclaimer": "Informational, not legal advice."
+}

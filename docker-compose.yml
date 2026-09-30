@@ -1,0 +1,37 @@
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: pramana
+      POSTGRES_PASSWORD: pramana
+      POSTGRES_DB: pramana
+    ports:
+      - "5432:5432"
+    volumes:
+      - pramana_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pramana -d pramana"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql+psycopg://pramana:pramana@db:5432/pramana
+      # MOCK_MODE reads fixtures from here; mounted read-only so edits on the host
+      # (contract changes) show up without a rebuild.
+      FIXTURES_DIR: /contracts/fixtures
+    volumes:
+      - ./contracts:/contracts:ro
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pramana_db_data:

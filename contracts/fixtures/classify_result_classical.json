@@ -1,0 +1,183 @@
+{
+  "type": "result",
+  "category": "classical",
+  "category_label": "Classical / generic Ayurvedic medicine",
+  "requirements": [
+    {
+      "text": "Manufacturing licence under the Drugs and Cosmetics Act/Rules citing the First-Schedule reference text; no separate efficacy trial required.",
+      "evidence_ids": [
+        "ev_dnc001"
+      ]
+    }
+  ],
+  "ip_posture": {
+    "patent": {
+      "risk": "high",
+      "note": "Classical formulations are excluded from patenting under s.3(p).",
+      "evidence_ids": [
+        "ev_7f3a9c"
+      ]
+    },
+    "gi": {
+      "risk": "low",
+      "note": "May be eligible if tied to a specific region and community practice.",
+      "evidence_ids": []
+    },
+    "trademark": {
+      "risk": "low",
+      "note": "Brand name/logo can be trademarked independent of the formulation.",
+      "evidence_ids": []
+    },
+    "design": {
+      "risk": "low",
+      "note": "Only applies to packaging/product shape, not the formulation.",
+      "evidence_ids": []
+    },
+    "copyright": {
+      "risk": "low",
+      "note": "Not applicable to the formulation itself.",
+      "evidence_ids": []
+    },
+    "trade_secret": {
+      "risk": "medium",
+      "note": "A specific process refinement could be kept as a trade secret.",
+      "evidence_ids": []
+    }
+  },
+  "abs_posture": {
+    "summary": "If ingredients are sourced from Indian biological resources for commercial use, NBA/SBB approval may still be required regardless of patent status.",
+    "evidence_ids": [
+      "ev_bd0101"
+    ]
+  },
+  "decision_path": {
+    "nodes": [
+      {
+        "id": "n1",
+        "kind": "question",
+        "label": "Is the formulation described in a First-Schedule text?",
+        "value": "yes",
+        "evidence_ids": [
+          "ev_dnc001"
+        ],
+        "taken": true
+      },
+      {
+        "id": "n2",
+        "kind": "outcome",
+        "label": "Classical / generic medicine",
+        "value": null,
+        "evidence_ids": [
+          "ev_7f3a9c"
+        ],
+        "taken": true
+      }
+    ],
+    "edges": [
+      {
+        "from": "n1",
+        "to": "n2",
+        "label": "yes"
+      }
+    ],
+    "outcome_id": "n2"
+  },
+  "evidence": {
+    "ev_dnc001": {
+      "id": "ev_dnc001",
+      "doc_id": "drugs_cosmetics_act_1940",
+      "doc_title": "The Drugs and Cosmetics Act, 1940 & Rules, 1945",
+      "doc_type": "statute",
+      "jurisdiction": "IN",
+      "citation_label": "Drugs & Cosmetics Rules, 1945 — First Schedule",
+      "section_key": "drugs_cosmetics_rules_1945#first_schedule",
+      "section_path": [
+        "First Schedule"
+      ],
+      "page": 112,
+      "page_end": 112,
+      "char_start": 1200,
+      "char_end": 1409,
+      "text": "formulations described in the authoritative books of Ayurveda, Siddha and Unani systems listed in the First Schedule are treated as classical/generic medicines for licensing purposes (illustrative paraphrase).",
+      "sha256": "8a6ea1c229edfce96afee897e368ba7a21640ff5cd4ccb733c3431d1910dc517",
+      "effective_from": "1945-08-21",
+      "effective_to": null,
+      "corpus_version": "2026.09.28-a",
+      "source_url": "https://www.indiacode.nic.in/",
+      "pdf_url": "/v1/documents/drugs_cosmetics_act_1940/pdf",
+      "highlights": []
+    },
+    "ev_7f3a9c": {
+      "id": "ev_7f3a9c",
+      "doc_id": "patents_act_1970",
+      "doc_title": "The Patents Act, 1970",
+      "doc_type": "statute",
+      "jurisdiction": "IN",
+      "citation_label": "Patents Act, 1970 — s.3(p)",
+      "section_key": "patents_act_1970#s3(p)",
+      "section_path": [
+        "Chapter II",
+        "Section 3",
+        "clause (p)"
+      ],
+      "page": 9,
+      "page_end": 9,
+      "char_start": 1200,
+      "char_end": 1444,
+      "text": "an invention which, in effect, is traditional knowledge or which is an aggregation or duplication of known properties of a traditionally known component or components is not an invention within the meaning of this Act (illustrative paraphrase).",
+      "sha256": "0380493b27f8abc6c0848cd3192e2aaa6c1e5157ae7c1e2c90189a666b288692",
+      "effective_from": "1970-04-20",
+      "effective_to": null,
+      "corpus_version": "2026.09.28-a",
+      "source_url": "https://www.indiacode.nic.in/",
+      "pdf_url": "/v1/documents/patents_act_1970/pdf",
+      "highlights": [
+        {
+          "page": 9,
+          "page_width": 595.3,
+          "page_height": 841.9,
+          "rects": [
+            [
+              72.0,
+              310.2,
+              523.1,
+              324.8
+            ],
+            [
+              72.0,
+              325.0,
+              260.4,
+              339.6
+            ]
+          ]
+        }
+      ]
+    },
+    "ev_bd0101": {
+      "id": "ev_bd0101",
+      "doc_id": "biological_diversity_act_2002",
+      "doc_title": "The Biological Diversity Act, 2002",
+      "doc_type": "statute",
+      "jurisdiction": "IN",
+      "citation_label": "Biological Diversity Act, 2002 — s.3",
+      "section_key": "biological_diversity_act_2002#s3",
+      "section_path": [
+        "Chapter II",
+        "Section 3"
+      ],
+      "page": 4,
+      "page_end": 4,
+      "char_start": 1200,
+      "char_end": 1437,
+      "text": "no person shall, without the previous approval of the National Biodiversity Authority, undertake specified activities involving obtaining biological resources for research, commercial utilisation, or bio-survey (illustrative paraphrase).",
+      "sha256": "8fa968bd3ff7d46a79491a756fe0c38357a72706440a1b34c8b3a9475a96acdb",
+      "effective_from": "2003-10-01",
+      "effective_to": null,
+      "corpus_version": "2026.09.28-a",
+      "source_url": "https://www.indiacode.nic.in/",
+      "pdf_url": "/v1/documents/biological_diversity_act_2002/pdf",
+      "highlights": []
+    }
+  },
+  "receipt_id": "rcp_01JATNKQ3P0000000000CL01"
+}
