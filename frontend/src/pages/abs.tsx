@@ -1,0 +1,26 @@
+import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useMutation } from '@tanstack/react-query';
+import { api } from '../api/client';
+import type { AbsRequest, ApplicantType, AbsResult } from '../api/types';
+import { EvidenceDrawer, PageHeading, Panel, Skeleton, StateMessage } from '../components/ui';
+import { useAppStore } from '../state/store';
+
+const activities = ['research', 'commercial_utilisation', 'ipr_application', 'transfer_results', 'export', 'cultivation_trade'] as const;
+const applicantTypes: ApplicantType[] = ['indian_citizen', 'indian_company', 'foreign_entity', 'nri'];
+// AbsRequest.applicant_type is a required ApplicantType enum (backend/app/schemas/abs.py), not
+// free text — the provisional form used '' as a placeholder, which the real backend would
+// reject with a 422. Default to a real enum value instead.
+const blank: AbsRequest = { applicant_type: 'indian_company', activity: [], resources: [{ species: '', is_codified_tk: false, is_cultivated: false, state: '' }], as_of: '', language: 'auto' };
+export function AbsPage() {
+  const { t } = useTranslation(); const { asOf, language } = useAppStore(); const [form, setForm] = useState<AbsRequest>({ ...blank, as_of: asOf, language }); const [selected, setSelected] = useState<import('../api/types').EvidenceSpan | null>(null);
+  const mutation = useMutation({ mutationFn: api.absCheck }); const result = mutation.data as AbsResult | undefined;
+  const patchResource = (key: keyof AbsRequest['resources'][number], value: string | boolean) => setForm((old) => ({ ...old, resources: old.resources.map((resource, index) => index === 0 ? { ...resource, [key]: value } : resource) }));
+  const submit = (event: React.FormEvent) => { event.preventDefault(); mutation.mutate({ ...form, as_of: asOf, language }); };
+  return <div className="page-stack"><PageHeading eyebrow="ACCESS & BENEFIT SHARING" title={t('absTitle')} description={t('absDescription')} />
+    <Panel className="form-panel"><form onSubmit={submit}><div className="form-grid"><label>{t('applicantType')}<select value={form.applicant_type} onChange={(event) => setForm({ ...form, applicant_type: event.target.value as ApplicantType })}>{applicantTypes.map((item) => <option key={item} value={item}>{item.replaceAll('_', ' ')}</option>)}</select></label><label>{t('activity')}<span className="small-muted">{t('selectAll')}</span><div className="check-grid">{activities.map((activity) => <label className="check-field" key={activity}><input type="checkbox" checked={form.activity.includes(activity)} onChange={(event) => setForm({ ...form, activity: event.target.checked ? [...form.activity, activity] : form.activity.filter((item) => item !== activity) })} /><span>{activity.replaceAll('_', ' ')}</span></label>)}</div></label><label>{t('species')}<input value={form.resources[0].species} onChange={(event) => patchResource('species', event.target.value)} /></label><label>{t('state')}<input value={form.resources[0].state ?? ''} onChange={(event) => patchResource('state', event.target.value)} /></label><label>{t('codifiedTk')}<select value={String(form.resources[0].is_codified_tk)} onChange={(event) => patchResource('is_codified_tk', event.target.value === 'true')}><option value="false">{t('no')}</option><option value="true">{t('yes')}</option></select></label><label>{t('cultivated')}<select value={String(form.resources[0].is_cultivated)} onChange={(event) => patchResource('is_cultivated', event.target.value === 'true')}><option value="false">{t('no')}</option><option value="true">{t('yes')}</option></select></label><label>IPR type (optional)<input value={form.ipr_type ?? ''} onChange={(event) => setForm({ ...form, ipr_type: event.target.value })} /></label></div><div className="form-actions"><button className="button button-primary">{t('submit')} →</button></div></form></Panel>
+    {mutation.isPending && <Panel><Skeleton rows={3} /></Panel>}{mutation.error && <StateMessage error={mutation.error} onRetry={() => mutation.mutate({ ...form, as_of: asOf, language })} />}
+    {result && <Panel className="abs-result"><div className="section-title"><div><span className="eyebrow">PROVISIONAL CHECKLIST</span><h2>{result.summary}</h2></div><button className="button button-secondary" onClick={() => window.print()}>{t('downloadPrint')}</button></div><div className="checklist">{result.checklist.map((item) => <article className="checklist-item" key={item.id}><div className="checklist-status"><span className={`badge ${item.required ? 'risk-high' : item.exempt ? 'status-verified' : 'risk-low'}`}>{item.required ? t('required') : item.exempt ? t('exempt') : 'Information'}</span><span>{item.authority}</span></div><div><h3>{item.title}</h3><p>{item.detail}</p>{item.exempt_reason && <p>{item.exempt_reason}</p>}</div><div className="checklist-meta">{item.form && <span>Form: {item.form}</span>}{item.timing && <span>{t('timing')}: {item.timing}</span>}{item.evidence_ids.map((id) => result.evidence[id] && <button className="citation-chip" key={id} onClick={() => setSelected(result.evidence[id])}>[{id}]</button>)}</div></article>)}</div></Panel>}
+    <EvidenceDrawer evidence={selected} onClose={() => setSelected(null)} />
+  </div>;
+}
