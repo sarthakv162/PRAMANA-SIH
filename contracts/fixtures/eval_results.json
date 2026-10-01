@@ -1,62 +1,8 @@
 {
-  "run_id": "eval_01JATNKQ3P0000000000EV01",
-  "corpus_version": "2026.09.28-a",
-  "n_questions": 90,
-  "conditions": [
-    {
-      "name": "LLM only",
-      "citation_precision": 0.31,
-      "citation_recall": 0.22,
-      "faithfulness": 0.48,
-      "abstention_accuracy": 0.35,
-      "jurisdiction_leaks": 14
-    },
-    {
-      "name": "Vector-only RAG",
-      "citation_precision": 0.61,
-      "citation_recall": 0.58,
-      "faithfulness": 0.66,
-      "abstention_accuracy": 0.52,
-      "jurisdiction_leaks": 6
-    },
-    {
-      "name": "Hybrid RAG + citations",
-      "citation_precision": 0.79,
-      "citation_recall": 0.74,
-      "faithfulness": 0.81,
-      "abstention_accuracy": 0.64,
-      "jurisdiction_leaks": 2
-    },
-    {
-      "name": "PRAMANA (ours)",
-      "citation_precision": 0.96,
-      "citation_recall": 0.88,
-      "faithfulness": 0.94,
-      "abstention_accuracy": 0.89,
-      "jurisdiction_leaks": 0
-    }
-  ],
-  "risk_coverage": [
-    {
-      "threshold": 0.2,
-      "coverage": 0.97,
-      "risk": 0.22
-    },
-    {
-      "threshold": 0.35,
-      "coverage": 0.9,
-      "risk": 0.11
-    },
-    {
-      "threshold": 0.5,
-      "coverage": 0.78,
-      "risk": 0.05
-    },
-    {
-      "threshold": 0.6,
-      "coverage": 0.64,
-      "risk": 0.02
-    }
-  ],
-  "generated_at": "2026-09-29T22:00:00Z"
+  "run_id": "eval_unmeasured_demo",
+  "corpus_version": "mock-fixture",
+  "n_questions": 0,
+  "conditions": [],
+  "risk_coverage": [],
+  "generated_at": "2026-10-01T00:00:00Z"
 }

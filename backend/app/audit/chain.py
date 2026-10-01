@@ -39,10 +39,13 @@ class ChainEntry:
 
 
 def append_entry(session: Session, request_id: str, entry: dict[str, Any]) -> ChainEntry:
-    """Locks the tail of the chain, computes this entry's hash on top of it, and inserts.
-    Caller must be inside a transaction that commits promptly — the row lock is held until
-    then.
+    """Serializes appends with a transaction-scoped advisory lock, then inserts the new tail.
+
+    A row lock on the current tail is insufficient: concurrent inserts can both observe and
+    extend the same predecessor (including when the chain is empty). The advisory lock is
+    independent of table contents and remains held until the caller commits.
     """
+    session.execute(sa.text("SELECT pg_advisory_xact_lock(:lock_key)"), {"lock_key": 5784116599020218673})
     last = session.execute(
         sa.select(audit_log.c.entry_hash).order_by(audit_log.c.seq.desc()).limit(1).with_for_update()
     ).first()

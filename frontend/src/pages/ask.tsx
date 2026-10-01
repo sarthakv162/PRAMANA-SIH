@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { useQuery } from '@tanstack/react-query';
 import { api } from '../api/client';
 import { QUERY_STAGES, type EvidenceSpan, type QueryCard, type QueryRequest } from '../api/types';
 import { EvidenceDrawer, EvidenceQuote, PageHeading, Panel, StateMessage, StatusBadge } from '../components/ui';
@@ -48,6 +49,7 @@ function ClaimCard({ card, claim, openEvidence }: { card: Extract<QueryCard, { t
 
 function AnswerCardView({ card, jurisdiction, onFollowup }: { card: Extract<QueryCard, { type: 'answer' }>; jurisdiction: string; onFollowup: (text: string) => void }) {
   const { t } = useTranslation();
+  const health = useQuery({ queryKey: ['health'], queryFn: api.health });
   const addCase = useAppStore((state) => state.addCaseItem);
   const caseFile = useAppStore((state) => state.caseFile);
   const alreadyAdded = caseFile.some((item) => item.request_id === card.request_id);
@@ -62,7 +64,7 @@ function AnswerCardView({ card, jurisdiction, onFollowup }: { card: Extract<Quer
   };
   const open = (evidence: EvidenceSpan) => setDrawerEvidence(evidence);
   return <>
-    <Panel className="answer-panel"><div className="answer-topline"><div className="answer-tags"><span className="eyebrow">{t('reviewMock')}</span><span className="corpus-tag">{card.corpus_version}</span></div><div className="answer-actions"><span className={`confidence confidence-${card.confidence.level}`}>{t('confidence')} · {t(card.confidence.level)} {Math.round(card.confidence.score * 100)}%</span>{card.review_recommended && <span className="badge badge-review">⚑ {t('reviewRecommended')}</span>}</div></div>
+    <Panel className="answer-panel"><div className="answer-topline"><div className="answer-tags"><span className="eyebrow">{health.data?.mock_mode === false ? t('liveAnswer') : t('reviewMock')}</span><span className="corpus-tag">{card.corpus_version}</span></div><div className="answer-actions"><span className={`confidence confidence-${card.confidence.level}`}>{t('confidence')} · {t(card.confidence.level)} {Math.round(card.confidence.score * 100)}%</span>{card.review_recommended && <span className="badge badge-review">⚑ {t('reviewRecommended')}</span>}</div></div>
       {card.dropped_claims > 0 && <div className="note warning-note">ⓘ {card.dropped_claims} {t('removedClaims')}</div>}
       <div className={jurisdiction === 'BOTH' ? 'jurisdiction-columns' : ''}>{sections.map((section) => {
         const used = new Set(section.claims.flatMap((claim) => claim.evidence_ids).map((id) => card.evidence[id]?.jurisdiction).filter(Boolean));

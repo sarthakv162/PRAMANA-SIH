@@ -13,6 +13,8 @@ build/
 frontend/node_modules/
 frontend/dist/
 frontend/.vite/
+frontend/test-results/
+frontend/playwright-report/
 
 # corpus source PDFs are large and licensed; never commit
 corpus/raw/*

@@ -1,21 +1,29 @@
 """App settings, read from environment / .env. See .env.example for the full list."""
 
 from functools import lru_cache
+from pathlib import Path
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+_PROJECT_ROOT = Path(__file__).resolve().parents[2]
+
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    model_config = SettingsConfigDict(env_file=_PROJECT_ROOT / ".env", extra="ignore")
 
     database_url: str = Field(
-        default="postgresql+psycopg://pramana:pramana@localhost:5432/pramana",
+        default="postgresql+psycopg://pramana_app:local-dev-app@localhost:5432/pramana",
         alias="DATABASE_URL",
     )
+    database_url_admin: str = Field(default="", alias="DATABASE_URL_ADMIN")
+    ingest_database_url: str = Field(default="", alias="INGEST_DATABASE_URL")
+    app_db_password: str = Field(default="", alias="APP_DB_PASSWORD")
+    ingest_db_password: str = Field(default="", alias="INGEST_DB_PASSWORD")
 
-    llm_provider: str = Field(default="anthropic", alias="LLM_PROVIDER")
-    llm_model: str = Field(default="claude-sonnet-5-5", alias="LLM_MODEL")
+    llm_provider: str = Field(default="groq", alias="LLM_PROVIDER")
+    llm_model: str = Field(default="openai/gpt-oss-120b", alias="LLM_MODEL")
+    groq_api_key: str = Field(default="", alias="GROQ_API_KEY")
     llm_api_key: str = Field(default="", alias="LLM_API_KEY")
 
     embedder: str = Field(default="local", alias="EMBEDDER")
@@ -52,6 +60,9 @@ class Settings(BaseSettings):
     translate_provider: str = Field(default="llm", alias="TRANSLATE_PROVIDER")
 
     request_deadline_s: float = Field(default=45.0, alias="REQUEST_DEADLINE_S")
+
+    rate_limit_requests: int = Field(default=120, alias="RATE_LIMIT_REQUESTS")
+    rate_limit_window_s: int = Field(default=60, alias="RATE_LIMIT_WINDOW_S")
 
     mock_mode: bool = Field(default=True, alias="MOCK_MODE")
     demo_key: str = Field(default="", alias="DEMO_KEY")

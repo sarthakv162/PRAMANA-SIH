@@ -24,6 +24,7 @@ async def health(session: Session = Depends(get_session)) -> HealthStatus:
             corpus_version = "unknown"
     return HealthStatus(
         status="ok",
+        mock_mode=settings.mock_mode,
         corpus_version=corpus_version,
         models=ModelsStatus(
             llm=settings.llm_model,

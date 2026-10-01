@@ -15,13 +15,13 @@ import pymupdf
 import sqlalchemy as sa
 from sqlalchemy.orm import Session
 
-from app.core.db import SessionLocal
+from app.core.db import IngestSessionLocal
 from app.core.hashing import sha256_hex
 from app.core.logging import configure_logging, get_logger
 from app.ingest import fetch
 from app.ingest.bboxes import find_highlights
 from app.ingest.chunk_legal import chunk_document
-from app.ingest.parse_pdf import parse_pdf
+from app.ingest.parse_pdf import OCR_DENSITY_FLOOR, parse_pdf
 from app.ingest.versions import create_staged_version
 from app.retrieval import embed
 from app.retrieval.repo import chunks, documents, edges, sections
@@ -37,6 +37,13 @@ def ingest_source(
     result = chunk_document(source.id, parsed)
     for w in result.warnings:
         logger.warning(w)
+    low_ocr_pages = [
+        page.printed_number for page in parsed.pages if page.density < OCR_DENSITY_FLOOR
+    ]
+    if low_ocr_pages:
+        logger.warning(
+            f"{source.id}: low-text-density pages need OCR/manual review: {low_ocr_pages}"
+        )
 
     file_sha256 = sha256_hex(pdf_path.read_bytes())
     # `documents` is not versioned (no corpus_version_id column, §6.1) — it's the same row
@@ -148,12 +155,22 @@ def ingest_source(
             )
         )
 
+    proviso_targets = {edge.dst_key for edge in result.edges if edge.kind == "proviso_of"}
+    orphan_provisos = [
+        chunk.section_key
+        for chunk in result.chunks
+        if chunk.section_key.endswith(("-proviso", "-explanation"))
+        and chunk.section_key not in proviso_targets
+    ]
+
     session.commit()
     return {
         "source_id": source.id,
         "sections": len(result.chunks),
         "edges": len(result.edges),
         "unlocated_bboxes": unlocated,
+        "low_ocr_pages": low_ocr_pages,
+        "orphan_provisos": orphan_provisos,
         "warnings": result.warnings,
     }
 
@@ -171,7 +188,7 @@ def main() -> None:
         if not sources:
             raise SystemExit(f"no such manifest source: {args.source}")
 
-    with SessionLocal() as session:
+    with IngestSessionLocal() as session:
         version_id = create_staged_version(session, args.version_label)
         logger.info(f"staged corpus_version {version_id}")
 
@@ -181,11 +198,37 @@ def main() -> None:
             reports.append(ingest_source(session, source, version_id))
 
     print("\n--- ingest report ---")
+    report_lines = [
+        "# PRAMANA ingest report",
+        "",
+        f"Staged version: `{version_id}`",
+        "",
+        "Low-density pages are flagged for OCR/manual review. This prototype does not run OCR.",
+        "",
+        "| Source | Sections | Chunks | Unlocated bboxes | Low-density pages | Orphan provisos | Warnings |",
+        "|---|---:|---:|---:|---:|---:|---:|",
+    ]
     for r in reports:
+        report_lines.append(
+            f"| `{r['source_id']}` | {r['sections']} | {r['sections']} | "
+            f"{r['unlocated_bboxes']} | {len(r['low_ocr_pages'])} "
+            f"({', '.join(map(str, r['low_ocr_pages'])) or 'none'}) | "
+            f"{len(r['orphan_provisos'])} | {len(r['warnings'])} |"
+        )
         print(
             f"{r['source_id']}: {r['sections']} sections/chunks, {r['edges']} edges, "
-            f"{r['unlocated_bboxes']} unlocated bboxes, {len(r['warnings'])} warnings"
+            f"{r['unlocated_bboxes']} unlocated bboxes, "
+            f"{len(r['low_ocr_pages'])} low-density pages, "
+            f"{len(r['orphan_provisos'])} orphan provisos, {len(r['warnings'])} warnings"
         )
+        for warning in r["warnings"]:
+            report_lines.append(f"\nWarning: {warning}")
+        for orphan in r["orphan_provisos"]:
+            report_lines.append(f"\nOrphan proviso/explanation: `{orphan}`")
+
+    report_path = fetch.raw_dir() / "ingest_report.md"
+    report_path.write_text("\n".join(report_lines) + "\n")
+    print(f"full report: {report_path}")
 
 
 if __name__ == "__main__":

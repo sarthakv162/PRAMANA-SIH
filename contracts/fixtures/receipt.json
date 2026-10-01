@@ -8,7 +8,7 @@
     "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
   ],
   "model_ids": {
-    "llm": "claude-sonnet-5-5",
+    "llm": "openai/gpt-oss-120b",
     "embed": "bge-m3",
     "nli": "mdeberta-v3-xnli"
   },

@@ -105,7 +105,9 @@ async def get_document_pdf(doc_id: str, session: Session = Depends(get_session))
     document = repo.fetch_document_by_short_key(session, doc_id)
     if document is None:
         raise HTTPException(status_code=404, detail="document not found")
-    pdf_path = CORPUS_ROOT / document.pdf_path
+    pdf_path = (CORPUS_ROOT / document.pdf_path).resolve()
+    if not pdf_path.is_relative_to(CORPUS_ROOT.resolve()):
+        raise ApiError(code="pdf_unavailable", message="The configured PDF path is invalid.", status_code=404)
     if not pdf_path.exists():
         raise ApiError(code="pdf_unavailable", message="PDF file missing on disk.", status_code=404)
     return FileResponse(pdf_path, media_type="application/pdf")

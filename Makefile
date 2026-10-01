@@ -1,7 +1,8 @@
-.PHONY: up down ingest promote test eval contracts types lint typecheck
+.PHONY: up down logs install test eval ingest ingest-report promote contracts types frontend-install frontend-lint frontend-test frontend-e2e frontend-build lint typecheck
 
-BACKEND := backend
-VENV_ACTIVATE := source .venv/bin/activate
+SHELL := /bin/bash
+.ONESHELL:
+PYTHON ?= python3.12
 
 up:
 	docker compose up --build
@@ -9,36 +10,54 @@ up:
 down:
 	docker compose down
 
-# Ingestion CLI lands in M1; this target is the documented entrypoint ahead of that.
-ingest:
-	cd $(BACKEND) && $(VENV_ACTIVATE) && python -m app.ingest.cli
+logs:
+	docker compose logs -f --tail=200
 
-# Promotes a staged corpus_version to live after running the eval smoke test (§6.2 step 8).
-promote:
-	cd $(BACKEND) && $(VENV_ACTIVATE) && python -m app.ingest.versions promote --label "$(V)"
+# Optional host development environment. The Docker workflow needs no host Python dependencies.
+install:
+	$(PYTHON) -m venv .venv
+	.venv/bin/python -m pip install --upgrade pip
+	.venv/bin/python -m pip install -e 'backend[dev]'
 
 test:
-	cd $(BACKEND) && $(VENV_ACTIVATE) && pytest
+	docker compose exec -T -e MOCK_MODE=1 backend pytest -p no:cacheprovider
 
-# Golden-set evaluation harness lands in M5; placeholder entrypoint per §9.
 eval:
-	cd $(BACKEND) && $(VENV_ACTIVATE) && python ../eval/run_eval.py
+	docker compose exec -T backend python /workspace/eval/run_eval.py
 
-# Exports contracts/openapi.yaml straight from the Pydantic/FastAPI schemas — the
-# generated file, not a hand-maintained one, is the thing CI diffs against (invariant I7).
+ingest:
+	docker compose exec -T backend python -m app.ingest.cli
+
+ingest-report:
+	docker compose exec -T backend cat /workspace/corpus/raw/ingest_report.md
+
+promote:
+	@if [[ -z "$(V)" ]]; then echo 'Usage: make promote V=<staged-version-label>'; exit 2; fi
+	docker compose exec -T backend python -m app.ingest.versions promote --label '$(V)'
+
 contracts:
-	cd $(BACKEND) && $(VENV_ACTIVATE) && python -c "\
-import yaml; \
-from app.main import app; \
-yaml.safe_dump(app.openapi(), open('../contracts/openapi.yaml', 'w'), sort_keys=False)"
+	docker compose exec -T backend python -c 'import yaml; from app.main import app; yaml.safe_dump(app.openapi(), open("/workspace/contracts/openapi.yaml", "w"), sort_keys=False)'
 
-# Frontend isn't scaffolded yet (M0 frontend work is Ritwik's); once it is, this runs
-# openapi-typescript against contracts/openapi.yaml to produce frontend/src/api/types.gen.ts.
-types:
-	@echo "frontend not scaffolded yet — will run: cd frontend && npx openapi-typescript ../contracts/openapi.yaml -o src/api/types.gen.ts"
+types: contracts
+	npm --prefix frontend run types:generate
+
+frontend-install:
+	npm --prefix frontend ci
+
+frontend-lint:
+	npm --prefix frontend run lint
+
+frontend-test:
+	npm --prefix frontend test -- --reporter=dot
+
+frontend-e2e:
+	npm --prefix frontend run test:e2e
+
+frontend-build:
+	npm --prefix frontend run build
 
 lint:
-	cd $(BACKEND) && $(VENV_ACTIVATE) && ruff check app
+	docker compose exec -T backend ruff check app tests
 
 typecheck:
-	cd $(BACKEND) && $(VENV_ACTIVATE) && mypy app
+	docker compose exec -T backend mypy app

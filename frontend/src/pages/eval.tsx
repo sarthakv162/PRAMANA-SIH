@@ -14,9 +14,9 @@ export function EvalPage() {
   const chartColors = theme === 'dark'
     ? { grid: 'rgba(205, 218, 206, .18)', text: '#b7c4ba', line: '#a8c8ae', tooltip: '#202a22', border: 'rgba(205, 218, 206, .2)' }
     : { grid: '#e2e9e3', text: '#68776d', line: '#548469', tooltip: '#fff', border: '#dce5dc' };
-  return <div className="page-stack"><PageHeading eyebrow="MEASURED SYSTEM QUALITY" title={t('evalTitle')} description={t('evalDescription')} />
+  return <div className="page-stack"><PageHeading eyebrow={result?.n_questions ? 'MEASURED SYSTEM QUALITY' : 'EVALUATION STATUS'} title={t('evalTitle')} description={t('evalDescription')} />
     {query.isLoading && <Panel><Skeleton rows={4} /></Panel>}{query.error && <StateMessage error={query.error} onRetry={() => void query.refetch()} />}
-    {result && <>
+    {result && result.n_questions > 0 && <>
       <Panel className="eval-meta">
         <div className="eval-run-heading"><span className="eyebrow">{t('latestRun').toUpperCase()}</span><h2>{result.run_id}</h2></div>
         <div className="eval-metadata"><span><b>{t('questions')}</b>{result.n_questions}</span><span><b>{t('conditions')}</b>{result.conditions.length}</span><span><b>{t('version')}</b>{result.corpus_version}</span><span><b>{t('generated')}</b>{new Date(result.generated_at).toLocaleString()}</span></div>
@@ -39,6 +39,7 @@ export function EvalPage() {
         </LineChart></ResponsiveContainer></div>
       </Panel>}
     </>}
+    {result && result.n_questions === 0 && <Panel className="eval-empty-panel"><EmptyState title={t('noEval')} detail={t('evalNoMeasurements')} /></Panel>}
   </div>;
 }
-function formatRate(value: number) { return `${(value * 100).toFixed(1)}%`; }
+function formatRate(value: number | null) { return value === null ? '—' : `${(value * 100).toFixed(1)}%`; }

@@ -11,7 +11,8 @@ class EvalCondition(ContractModel):
     name: str
     citation_precision: float = Field(ge=0.0, le=1.0)
     citation_recall: float = Field(ge=0.0, le=1.0)
-    faithfulness: float = Field(ge=0.0, le=1.0)
+    # Null means this run did not evaluate generated claims (for example, retrieval-only eval).
+    faithfulness: float | None = Field(default=None, ge=0.0, le=1.0)
     abstention_accuracy: float = Field(ge=0.0, le=1.0)
     jurisdiction_leaks: int = Field(ge=0)
 

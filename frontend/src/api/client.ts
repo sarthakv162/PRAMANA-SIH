@@ -20,15 +20,12 @@ function stringifyAnswers(answers: Record<string, string | string[] | boolean>):
   );
 }
 
-const API_MODE = import.meta.env.VITE_API_MODE ?? 'mock';
-// Keep MSW requests same-origin so its worker can intercept them in every dev host configuration.
-const BASE_URL = API_MODE === 'mock' ? '/v1' : (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/v1').replace(/\/$/, '');
-const DEMO_KEY = import.meta.env.VITE_DEMO_KEY;
+// Both MSW and the live reverse proxy use the same-origin API path by default.
+const BASE_URL = (import.meta.env.VITE_API_BASE_URL || '/v1').replace(/\/$/, '');
 
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const headers = new Headers(init.headers);
   if (init.body && !(init.body instanceof FormData)) headers.set('Content-Type', 'application/json');
-  if (DEMO_KEY) headers.set('X-Demo-Key', DEMO_KEY);
   const response = await fetch(`${BASE_URL}${path}`, { ...init, headers });
   if (!response.ok) {
     let body: Partial<ApiError> = {};
@@ -40,7 +37,6 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
 
 export async function querySSE(body: QueryRequest, signal: AbortSignal, onStage: (stage: StageEvent) => void): Promise<import('./types').QueryCard> {
   const headers = new Headers({ 'Content-Type': 'application/json', Accept: 'text/event-stream' });
-  if (DEMO_KEY) headers.set('X-Demo-Key', DEMO_KEY);
   const response = await fetch(`${BASE_URL}/query`, { method: 'POST', headers, body: JSON.stringify(body), signal });
   if (!response.ok || !response.body) throw new Error(`Query failed (${response.status})`);
   const reader = response.body.getReader();
@@ -61,7 +57,11 @@ export async function querySSE(body: QueryRequest, signal: AbortSignal, onStage:
       }, [] as string[]).join('\n');
       if (eventName === 'stage') onStage(JSON.parse(data) as StageEvent);
       if (eventName === 'result') result = JSON.parse(data) as import('./types').QueryCard;
-      if (eventName === 'error') throw new Error((JSON.parse(data) as ApiError).error.message);
+      if (eventName === 'error') {
+        const payload = JSON.parse(data) as ApiError | { code?: string; message?: string };
+        const message = 'error' in payload ? payload.error.message : payload.message;
+        throw new Error(message || 'The query service returned an error.');
+      }
       eventName = '';
     }
     if (done) break;
@@ -86,21 +86,25 @@ export const api = {
   versions: () => request<CorpusVersion[]>('/corpus/versions'),
   span: (id: string) => request<import('./types').EvidenceSpan>(`/spans/${encodeURIComponent(id)}`),
   pdfUrl: (id: string) => `${BASE_URL}/documents/${encodeURIComponent(id)}/pdf`,
-  pdfHeaders: () => DEMO_KEY ? { 'X-Demo-Key': DEMO_KEY } : {},
+  pdfHeaders: () => ({}),
   receipt: (id: string) => request<Receipt>(`/receipts/${encodeURIComponent(id)}`),
   verify: (id: string) => request<VerifyResult>(`/receipts/${encodeURIComponent(id)}/verify`, { method: 'POST' }),
   evalLatest: () => request<EvalResults>('/eval/latest'),
   escalate: (body: EscalationRequest) => request<EscalationResponse>('/escalations', { method: 'POST', body: JSON.stringify(body) }),
-  escalations: () => request<EscalationItem[]>('/escalations'),
+  escalations: (adminKey: string) => request<EscalationItem[]>('/escalations', { headers: { 'X-Demo-Key': adminKey } }),
   asr: (audio: Blob) => { const form = new FormData(); form.append('audio', audio, 'recording.webm'); return request<AsrResponse>('/speech/asr', { method: 'POST', body: form }); },
   tts: async (text: string, language: Language) => {
-    const response = await fetch(`${BASE_URL}/speech/tts`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...(DEMO_KEY ? { 'X-Demo-Key': DEMO_KEY } : {}) }, body: JSON.stringify({ text, language }) });
+    const response = await fetch(`${BASE_URL}/speech/tts`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text, language }) });
     if (!response.ok) throw new Error(`Speech synthesis unavailable (${response.status})`);
     return response.blob();
   },
   dossier: async (items: string[], format: DossierFormat, language: Language) => {
-    const response = await fetch(`${BASE_URL}/dossier`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...(DEMO_KEY ? { 'X-Demo-Key': DEMO_KEY } : {}) }, body: JSON.stringify({ items, format, language }) });
-    if (!response.ok) throw new Error(`Dossier download failed (${response.status})`);
+    const response = await fetch(`${BASE_URL}/dossier`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ items, format, language }) });
+    if (!response.ok) {
+      let message = `Dossier download failed (${response.status})`;
+      try { const body = await response.json() as ApiError; message = body.error?.message || message; } catch { /* Non-JSON error response. */ }
+      throw new Error(message);
+    }
     return response.blob();
   },
   stages: QUERY_STAGES,

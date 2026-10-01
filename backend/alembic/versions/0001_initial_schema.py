@@ -300,19 +300,19 @@ def upgrade() -> None:
     )
 
     # --- Least-privilege roles (§6.1) ---
-    # Passwords match .env.example's DATABASE_URL_RO placeholder; rotate for real deployments.
+    # Login roles are provisioned separately from environment secrets at backend startup.
     op.execute(
         """
         DO $$
         BEGIN
             IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'app_ro') THEN
-                CREATE ROLE app_ro LOGIN PASSWORD 'app_ro';
+                CREATE ROLE app_ro NOLOGIN;
             END IF;
             IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'ingest_rw') THEN
-                CREATE ROLE ingest_rw LOGIN PASSWORD 'ingest_rw';
+                CREATE ROLE ingest_rw NOLOGIN;
             END IF;
             IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'audit_append') THEN
-                CREATE ROLE audit_append LOGIN PASSWORD 'audit_append';
+                CREATE ROLE audit_append NOLOGIN;
             END IF;
         END
         $$;

@@ -23,7 +23,11 @@ def run(session: Session, state: RequestState) -> list[sa.Row[Any]]:
             chunk_ids = [
                 str(row.id)
                 for row in repo.fetch_chunks_for_section(
-                    session, str(section.id), state.corpus_version_id
+                    session,
+                    str(section.id),
+                    state.corpus_version_id,
+                    state.jurisdictions,
+                    state.as_of,
                 )
             ]
             state.retrieval_margin = 1.0  # a resolved citation is unambiguous

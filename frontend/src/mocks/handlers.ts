@@ -40,8 +40,9 @@ function sse(events: { event: string; data: unknown }[]) {
 // consistent with everything else mock mode serves.
 const health: HealthResponse = {
   status: 'ok',
+  mock_mode: true,
   corpus_version: '2026.09.28-a',
-  models: { llm: 'claude-sonnet-5-5', embed: 'bge-m3', nli: 'mdeberta-v3-xnli' },
+  models: { llm: 'openai/gpt-oss-120b', embed: 'bge-m3', nli: 'mdeberta-v3-xnli' },
 };
 
 const documents: DocumentSummary[] = [
@@ -115,19 +116,25 @@ export const handlers = [
     mockEscalations.push(ticket);
     return HttpResponse.json({ ticket_id: ticket.ticket_id, status: ticket.status });
   }),
-  http.get(`${base}/escalations`, () => HttpResponse.json(mockEscalations)),
+  http.get(`${base}/escalations`, ({ request }) => request.headers.get('X-Demo-Key')
+    ? HttpResponse.json(mockEscalations)
+    : HttpResponse.json({ error: { code: 'unauthorized', message: 'A demo key is required.', request_id: 'req_mock' } }, { status: 401 })),
   http.post(`${base}/speech/asr`, () => HttpResponse.json({ text: 'क्या पारंपरिक ज्ञान पर पेटेंट मिल सकता है?', language: 'hi' })),
   // The real backend's /speech/tts always 503s until Bhashini keys exist (§6.12), and the
   // frontend falls back to the browser speechSynthesis API — mirror that here instead of
   // faking an mp3 fixture that doesn't exist on the contract.
   http.post(`${base}/speech/tts`, () => new HttpResponse(null, { status: 503 })),
-  // Real mock-mode /dossier (app/api/dossier.py) returns a plain placeholder body with the
-  // correct media type rather than a real PDF/DOCX binary — mirror that exactly instead of
-  // shipping fake binary fixtures that don't exist in contracts/fixtures.
+  // MSW can return a real text/markdown demo document. Binary PDF/DOCX exports run through
+  // the backend's fixture-backed renderers; avoid returning fake bytes with those media types.
   http.post(`${base}/dossier`, async ({ request }) => {
     const body = await request.json() as { items: string[]; format: 'pdf' | 'docx' | 'md' };
-    const mediaType = body.format === 'pdf' ? 'application/pdf' : body.format === 'docx' ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' : 'text/markdown';
-    const placeholder = `# PRAMANA dossier (mock)\n\nItems: ${body.items.join(', ')}\nInformational, not legal advice.\n`;
-    return new HttpResponse(placeholder, { headers: { 'Content-Type': mediaType } });
+    if (body.format !== 'md') {
+      return HttpResponse.json({ error: { code: 'mock_export_unavailable', message: 'Select Markdown here, or use the Docker backend demo for PDF and DOCX exports.', request_id: 'req_mock' } }, { status: 501 });
+    }
+    const items = body.items.map((id) => id === answerCardIn.request_id
+      ? `## Answer\n\n${answerCardIn.sections.flatMap((section) => section.claims.map((claim) => claim.text)).join('\n\n')}\n\n${Object.values(answerCardIn.evidence).map((span) => `> ${span.citation_label}\n> ${span.text}`).join('\n\n')}\n\nReceipt: ${answerCardIn.receipt_id}`
+      : `## Item not found\n\nNo stored fixture result for request ${id}.`).join('\n\n---\n\n');
+    const markdown = `# PRAMANA compliance dossier (mock fixture)\n\n${items}\n\nInformational, not legal advice.\n`;
+    return new HttpResponse(markdown, { headers: { 'Content-Type': 'text/markdown; charset=utf-8' } });
   }),
 ];

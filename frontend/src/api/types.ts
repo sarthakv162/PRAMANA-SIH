@@ -102,7 +102,7 @@ export interface VerifyResult { chain_valid: boolean; corpus_root: string; spans
  * question; the plan's §9 doesn't define a latency metric either, so this is a real
  * contract gap, not a naming difference — flagged for Ritwik/backend to decide whether to add
  * it to EvalCondition or drop the idea. */
-export interface EvalResults { run_id: string; corpus_version: string; n_questions: number; conditions: { name: string; citation_precision: number; citation_recall: number; faithfulness: number; abstention_accuracy: number; jurisdiction_leaks: number }[]; risk_coverage: { threshold: number; coverage: number; risk: number }[]; generated_at: string }
+export interface EvalResults { run_id: string; corpus_version: string; n_questions: number; conditions: { name: string; citation_precision: number; citation_recall: number; faithfulness: number | null; abstention_accuracy: number; jurisdiction_leaks: number }[]; risk_coverage: { threshold: number; coverage: number; risk: number }[]; generated_at: string }
 export interface EscalationRequest { request_id: string; contact?: string; note?: string }
 export interface EscalationResponse { ticket_id: string; status: string }
 /** GET /v1/escalations is typed `list[dict[str, Any]]` server-side (additionalProperties:
@@ -114,7 +114,7 @@ export interface EscalationItem { ticket_id: string; request_id: string; contact
 export interface AsrResponse { text: string; language: Language }
 /** models is a fixed {llm, embed, nli} object per backend/app/schemas/health.py::ModelsStatus. */
 export interface ModelsStatus { llm: string; embed: string; nli: string }
-export interface HealthResponse { status: string; corpus_version: string; models: ModelsStatus }
+export interface HealthResponse { status: string; mock_mode: boolean; corpus_version: string; models: ModelsStatus }
 export type DossierFormat = 'pdf' | 'docx' | 'md';
 
 export const QUERY_STAGES = ['intake', 'frame', 'cache', 'route', 'retrieve', 'resolve', 'generate', 'verify', 'render', 'audit'] as const;

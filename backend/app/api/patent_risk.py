@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.config import get_settings
 from app.core.db import get_session
+from app.core.errors import ApiError
 from app.core.fixtures import load_fixture
 from app.retrieval.repo import live_corpus_version
 from app.rules.patent_risk_logic import build_patent_risk
@@ -30,7 +31,7 @@ async def patent_risk(
 
     version = live_corpus_version(session)
     if version is None:
-        raise RuntimeError("no live corpus_version")
+        raise ApiError(code="no_corpus", message="No live corpus version is available.", status_code=503)
     corpus_version_id, corpus_version_label = version
     jurisdictions = ["IN"]  # patent risk is an India-law question
     return build_patent_risk(

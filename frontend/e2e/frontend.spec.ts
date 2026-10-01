@@ -65,10 +65,10 @@ test('side by side result has independent jurisdiction sections', async ({ page 
 
 test('classification wizard submits its server-driven answer', async ({ page }) => {
   await page.goto('/classify');
-  await expect(page.getByRole('heading', { name: /are any classical sources cited/i })).toBeVisible();
-  await page.getByLabel(/are any classical sources cited/i).fill('Bhavaprakasha');
+  await expect(page.getByText(/described in one of the authoritative books/i)).toBeVisible();
+  await page.getByRole('radio', { name: 'Yes' }).check();
   await page.getByRole('button', { name: /submit/i }).click();
-  await expect(page.getByRole('heading', { name: /classical \/ generic medicine/i })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /classical \/ generic ayurvedic medicine/i })).toBeVisible();
   await expect(page.getByRole('heading', { name: /decision path/i })).toBeVisible();
 });
 
@@ -76,9 +76,9 @@ test('receipt verifies and the tampered fixture reports invalidity', async ({ pa
   await page.goto('/receipt/rcp_demo_01');
   await page.getByRole('button', { name: /verify receipt/i }).click();
   await expect(page.getByRole('heading', { name: /audit chain valid/i })).toBeVisible();
-  await page.goto('/receipt/tampered');
+  await page.goto('/receipt/rcp_tampered_demo');
   await page.getByRole('button', { name: /verify receipt/i }).click();
-  await expect(page.getByRole('heading', { name: /audit chain invalid/i })).toBeVisible();
+  await expect(page.getByText('Merkle proof invalid')).toBeVisible();
 });
 
 test('ask page fits a basic mobile viewport without horizontal overflow', async ({ page }) => {
@@ -91,8 +91,8 @@ test('ask page fits a basic mobile viewport without horizontal overflow', async 
 test('interface language selection updates the shell and page copy', async ({ page }) => {
   await page.goto('/');
   await page.getByLabel(/interface language/i).selectOption('ta');
-  await expect(page.getByRole('heading', { name: 'சான்றுடன் கேளுங்கள்.' })).toBeVisible();
-  await expect(page.getByText('சான்று பணியிடம்').first()).toBeVisible();
+  await expect(page.getByRole('heading', { name: /ஆயுர்வேதத்தைப் பாதுகாக்கவும்/ })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'சஹாயக்கிடம் கேளுங்கள்' })).toBeVisible();
 });
 
 test('patent risk result exposes a clickable decision path citation', async ({ page }) => {
@@ -110,9 +110,10 @@ test('case file requests a marked mock dossier download', async ({ page }) => {
   await page.getByRole('button', { name: /ask pramana/i }).click();
   await expect(page.getByText(/illustrative mock response/i)).toBeVisible();
   await page.getByRole('button', { name: /add to case file/i }).click();
-  await page.getByRole('link', { name: 'Case file' }).click();
+  await page.getByRole('link', { name: 'Cases' }).click();
   await expect(page.getByText(/not built from the selected case items/i)).toBeVisible();
+  await page.getByLabel('Format').selectOption('md');
   const download = page.waitForEvent('download');
-  await page.getByRole('button', { name: /download pdf/i }).click();
-  expect((await download).suggestedFilename()).toBe('pramana-dossier.pdf');
+  await page.getByRole('button', { name: /download md/i }).click();
+  expect((await download).suggestedFilename()).toBe('pramana-dossier.md');
 });

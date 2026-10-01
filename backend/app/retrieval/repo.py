@@ -178,14 +178,15 @@ def fetch_section_by_key(
 
 
 def fetch_chunks_for_section(
-    session: Session, section_id: str, corpus_version_id: str
+    session: Session,
+    section_id: str,
+    corpus_version_id: str,
+    jurisdictions: list[str],
+    as_of: date,
 ) -> list[sa.Row[Any]]:
-    """All chunks belonging to one section, in document order (for cite-resolution, §6.4)."""
-    stmt = (
-        sa.select(chunks)
-        .where(chunks.c.section_id == section_id, chunks.c.corpus_version_id == corpus_version_id)
-        .order_by(chunks.c.char_start)
-    )
+    """Fetch a section's chunks through the shared corpus/jurisdiction/as-of gate."""
+    stmt = retrievable_chunks(corpus_version_id, jurisdictions, as_of)
+    stmt = stmt.where(chunks.c.section_id == section_id).order_by(chunks.c.char_start)
     return list(session.execute(stmt).all())
 
 
@@ -264,9 +265,18 @@ def trigram_search(
         sa.func.similarity(sections.c.section_key, text),
         sa.func.similarity(sa.func.coalesce(sections.c.heading, ""), text),
     )
+    eligible_sections = (
+        retrievable_chunks(corpus_version_id, jurisdictions, as_of)
+        .with_only_columns(chunks.c.section_id)
+        .distinct()
+        .subquery()
+    )
     sec_stmt = (
         sa.select(sections.c.id, similarity.label("similarity"))
-        .where(similarity > 0.2)
+        .where(
+            similarity > 0.2,
+            sections.c.id.in_(sa.select(eligible_sections.c.section_id)),
+        )
         .order_by(similarity.desc())
         .limit(top_n)
     )

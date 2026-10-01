@@ -130,8 +130,9 @@ def resolve_citations(
         section = repo.fetch_section_by_key(session, key, corpus_version_id)
         if section is None:
             continue
-        section_chunks = repo.fetch_chunks_for_section(session, str(section.id), corpus_version_id)
-        section_chunks = [c for c in section_chunks if c.jurisdiction in jurisdictions]
+        section_chunks = repo.fetch_chunks_for_section(
+            session, str(section.id), corpus_version_id, jurisdictions, as_of
+        )
         for chunk in section_chunks:
             document = repo.fetch_document(session, str(section.document_id))
             if document is None:

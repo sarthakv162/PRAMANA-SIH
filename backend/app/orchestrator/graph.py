@@ -21,7 +21,7 @@ from typing import Any
 from starlette.concurrency import run_in_threadpool
 
 from app.core.db import SessionLocal
-from app.core.deadline import DeadlineExceeded
+from app.core.deadline import Deadline, DeadlineExceeded
 from app.core.logging import get_logger
 from app.generation.llm import LlmError
 from app.orchestrator.nodes import audit as audit_node
@@ -65,13 +65,23 @@ class _StageRunner:
         self.timings: dict[str, int] = {}
         self.done: set[StageName] = set()
 
-    async def run(self, name: StageName, fn: Any, *args: Any) -> AsyncIterator[dict[str, Any]]:
+    async def run(
+        self,
+        name: StageName,
+        fn: Any,
+        *args: Any,
+        deadline: Deadline | None = None,
+    ) -> AsyncIterator[dict[str, Any]]:
         t = time.monotonic()
         yield {"event": "stage", "data": _stage_event(name, StageStatus.RUNNING)}
+        if deadline is not None:
+            deadline.check()
         if _is_coroutine_function(fn):
             await fn(*args)
         else:
             await run_in_threadpool(fn, *args)
+        if deadline is not None:
+            deadline.check()
         ms = int((time.monotonic() - t) * 1000)
         self.timings[name.value] = ms
         self.done.add(name)
@@ -104,13 +114,13 @@ async def run_query(request: QueryRequest) -> AsyncIterator[dict[str, Any]]:
         try:
             async for event in runner.run(StageName.INTAKE, intake.run, state, session):
                 yield event
-            async for event in runner.run(StageName.FRAME, frame.run, state):
+            async for event in runner.run(StageName.FRAME, frame.run, state, deadline=state.deadline):
                 yield event
 
             yield {"event": "stage", "data": _stage_event(StageName.CACHE, StageStatus.SKIPPED)}
             runner.done.add(StageName.CACHE)
 
-            async for event in runner.run(StageName.ROUTE, route.run, state):
+            async for event in runner.run(StageName.ROUTE, route.run, state, deadline=state.deadline):
                 yield event
 
             card: AnswerCard | RefusalCard
@@ -146,10 +156,10 @@ async def run_query(request: QueryRequest) -> AsyncIterator[dict[str, Any]]:
                     nonlocal chunk_rows
                     chunk_rows = await run_in_threadpool(retrieve.run, session, s)
 
-                async for event in runner.run(StageName.RETRIEVE, _retrieve, state):
+                async for event in runner.run(StageName.RETRIEVE, _retrieve, state, deadline=state.deadline):
                     yield event
                 resolve_args = (StageName.RESOLVE, resolve.run, session, state, chunk_rows)
-                async for event in runner.run(*resolve_args):
+                async for event in runner.run(*resolve_args, deadline=state.deadline):
                     yield event
 
                 if not state.evidence_pack:
@@ -162,7 +172,7 @@ async def run_query(request: QueryRequest) -> AsyncIterator[dict[str, Any]]:
                 else:
                     state.deadline.check()
                     try:
-                        async for event in runner.run(StageName.GENERATE, generate.run, state):
+                        async for event in runner.run(StageName.GENERATE, generate.run, state, deadline=state.deadline):
                             yield event
                     except LlmError as exc:
                         logger.warning(f"request {request_id}: generation unavailable ({exc})")
@@ -179,7 +189,7 @@ async def run_query(request: QueryRequest) -> AsyncIterator[dict[str, Any]]:
                     async def _verify(s: RequestState) -> None:
                         confidence_holder.append(verify_node.run(s))
 
-                    async for event in runner.run(StageName.VERIFY, _verify, state):
+                    async for event in runner.run(StageName.VERIFY, _verify, state, deadline=state.deadline):
                         yield event
                     confidence = confidence_holder[0]
 
@@ -240,6 +250,19 @@ async def run_query(request: QueryRequest) -> AsyncIterator[dict[str, Any]]:
                 "This took too long to answer — please try again.",
                 receipt_id="",
             )
+            # A timeout is still a completed response. Intake has persisted the request row,
+            # so append a receipt without re-checking the exhausted user-facing deadline.
+            # This preserves the receipt invariant and makes the refusal auditable.
+            try:
+                receipt_id = await run_in_threadpool(
+                    audit_node.run, session, state, fallback.model_dump(mode="json")
+                )
+                fallback = fallback.model_copy(update={"receipt_id": receipt_id})
+                runner.done.add(StageName.AUDIT)
+            except Exception:
+                logger.exception("request %s: failed to audit deadline refusal", request_id)
+            for event in runner.skipped_events():
+                yield event
             yield {"event": "result", "data": fallback.model_dump(mode="json")}
             yield {"event": "done", "data": {}}
         except Exception as exc:  # last-resort safety net — never leave the SSE stream hanging

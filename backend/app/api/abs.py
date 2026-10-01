@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.config import get_settings
 from app.core.db import get_session
+from app.core.errors import ApiError
 from app.core.fixtures import load_fixture
 from app.retrieval.repo import live_corpus_version
 from app.rules.abs_logic import build_abs_result
@@ -25,7 +26,7 @@ async def abs_check(request: AbsRequest, session: Session = Depends(get_session)
 
     version = live_corpus_version(session)
     if version is None:
-        raise RuntimeError("no live corpus_version")
+        raise ApiError(code="no_corpus", message="No live corpus version is available.", status_code=503)
     corpus_version_id, corpus_version_label = version
     as_of = date.fromisoformat(request.as_of) if request.as_of else date.today()
     return build_abs_result(session, request, corpus_version_id, corpus_version_label, as_of)

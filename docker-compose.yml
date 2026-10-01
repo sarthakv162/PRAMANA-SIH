@@ -2,36 +2,51 @@ services:
   db:
     image: pgvector/pgvector:pg16
     environment:
-      POSTGRES_USER: pramana
-      POSTGRES_PASSWORD: pramana
-      POSTGRES_DB: pramana
+      POSTGRES_USER: ${POSTGRES_USER:-pramana}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Copy .env.example to .env and set POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-pramana}
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - pramana_db_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U pramana -d pramana"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 5s
       timeout: 5s
-      retries: 10
+      retries: 20
 
   backend:
     build:
-      context: ./backend
+      context: .
+      dockerfile: backend/Dockerfile
     env_file:
       - .env
     environment:
-      DATABASE_URL: postgresql+psycopg://pramana:pramana@db:5432/pramana
-      # MOCK_MODE reads fixtures from here; mounted read-only so edits on the host
-      # (contract changes) show up without a rebuild.
-      FIXTURES_DIR: /contracts/fixtures
+      DATABASE_URL: postgresql+psycopg://pramana_app:${APP_DB_PASSWORD:?Set APP_DB_PASSWORD in .env}@db:5432/${POSTGRES_DB:-pramana}
+      DATABASE_URL_ADMIN: postgresql+psycopg://${POSTGRES_USER:-pramana}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@db:5432/${POSTGRES_DB:-pramana}
+      INGEST_DATABASE_URL: postgresql+psycopg://ingest_rw:${INGEST_DB_PASSWORD:?Set INGEST_DB_PASSWORD in .env}@db:5432/${POSTGRES_DB:-pramana}
+      FIXTURES_DIR: /workspace/contracts/fixtures
     volumes:
-      - ./contracts:/contracts:ro
+      - ./corpus/raw:/workspace/corpus/raw
+      - ./corpus/manifest.yaml:/workspace/corpus/manifest.yaml
+      - ./eval/results:/workspace/eval/results
+      - ./contracts:/workspace/contracts
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     depends_on:
       db:
         condition: service_healthy
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      args:
+        VITE_API_MODE: ${VITE_API_MODE:-live}
+    ports:
+      - "127.0.0.1:8080:80"
+    depends_on:
+      - backend
 
 volumes:
   pramana_db_data:

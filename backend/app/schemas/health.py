@@ -11,5 +11,6 @@ class ModelsStatus(ContractModel):
 
 class HealthStatus(ContractModel):
     status: str = "ok"
+    mock_mode: bool = True
     corpus_version: str
     models: ModelsStatus

@@ -12,6 +12,7 @@ import sqlalchemy as sa
 from sqlalchemy.orm import Session
 
 from app.audit.merkle import merkle_root
+from app.eval_runner import smoke_test_staged_version
 from app.retrieval.repo import all_chunks_ordered, corpus_versions
 
 
@@ -27,9 +28,7 @@ def create_staged_version(session: Session, label: str | None = None) -> str:
 
 
 def promote(session: Session, label: str) -> None:
-    """Flip a staged version to live. §6.2 step 8 also runs an eval smoke test first —
-    that lands with the eval harness in M5; this is the mechanical half of the promotion.
-    """
+    """Evaluate a staged version, then atomically retire the old and promote the new one."""
     version = session.execute(
         sa.select(corpus_versions).where(corpus_versions.c.label == label)
     ).first()
@@ -38,6 +37,7 @@ def promote(session: Session, label: str) -> None:
     if version.status != "staged":
         raise ValueError(f"corpus_version {label!r} is {version.status!r}, not staged")
 
+    smoke_test_staged_version(session, label)
     leaf_hashes = [row.sha256 for row in all_chunks_ordered(session, str(version.id))]
     root = merkle_root(leaf_hashes)
 
@@ -55,13 +55,10 @@ def promote(session: Session, label: str) -> None:
 
 
 def _main() -> None:
-    """`make promote V=<label>` (§6.2 step 8, Makefile). The eval smoke test this is
-    documented to run first lands with the eval harness (M5); today this just flips the
-    flag, so run it only after reviewing the staged version's ingest report by hand.
-    """
+    """`make promote V=<label>` runs the golden retrieval smoke test before promotion."""
     import argparse
 
-    from app.core.db import SessionLocal
+    from app.core.db import IngestSessionLocal
 
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -69,7 +66,7 @@ def _main() -> None:
     promote_parser.add_argument("--label", required=True)
     args = parser.parse_args()
 
-    with SessionLocal() as session:
+    with IngestSessionLocal() as session:
         promote(session, args.label)
     print(f"promoted {args.label} to live")
 

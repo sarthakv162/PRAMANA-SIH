@@ -32,10 +32,11 @@ paths:
         required: true
       responses:
         '200':
-          description: Successful Response
+          description: 'Server-sent events: stage, result or error, then done.'
           content:
-            application/json:
-              schema: {}
+            text/event-stream:
+              schema:
+                type: string
         '422':
           description: Validation Error
           content:
@@ -377,33 +378,17 @@ paths:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
   /v1/escalations:
-    get:
-      tags:
-      - escalations
-      summary: List Escalations
-      operationId: list_escalations_v1_escalations_get
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                items:
-                  additionalProperties: true
-                  type: object
-                type: array
-                title: Response List Escalations V1 Escalations Get
     post:
       tags:
       - escalations
       summary: Create Escalation
       operationId: create_escalation_v1_escalations_post
       requestBody:
+        required: true
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/EscalationRequest'
-        required: true
       responses:
         '200':
           description: Successful Response
@@ -411,6 +396,37 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/EscalationResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    get:
+      tags:
+      - escalations
+      summary: List Escalations
+      operationId: list_escalations_v1_escalations_get
+      parameters:
+      - name: X-Demo-Key
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: X-Demo-Key
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  additionalProperties: true
+                title: Response List Escalations V1 Escalations Get
         '422':
           description: Validation Error
           content:
@@ -970,9 +986,11 @@ components:
           minimum: 0.0
           title: Citation Recall
         faithfulness:
-          type: number
-          maximum: 1.0
-          minimum: 0.0
+          anyOf:
+          - type: number
+            maximum: 1.0
+            minimum: 0.0
+          - type: 'null'
           title: Faithfulness
         abstention_accuracy:
           type: number
@@ -989,7 +1007,6 @@ components:
       - name
       - citation_precision
       - citation_recall
-      - faithfulness
       - abstention_accuracy
       - jurisdiction_leaks
       title: EvalCondition
@@ -1200,6 +1217,10 @@ components:
           type: string
           title: Status
           default: ok
+        mock_mode:
+          type: boolean
+          title: Mock Mode
+          default: true
         corpus_version:
           type: string
           title: Corpus Version

@@ -15,7 +15,10 @@ target_metadata = None
 
 def _database_url() -> str:
     return os.environ.get(
-        "DATABASE_URL", "postgresql+psycopg://pramana:pramana@localhost:5432/pramana"
+        "DATABASE_URL_ADMIN",
+        os.environ.get(
+            "DATABASE_URL", "postgresql+psycopg://pramana:pramana@localhost:5432/pramana"
+        ),
     )
 
 

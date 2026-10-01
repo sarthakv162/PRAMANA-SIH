@@ -579,7 +579,7 @@ export interface components {
             /** Citation Recall */
             citation_recall: number;
             /** Faithfulness */
-            faithfulness: number;
+            faithfulness?: number | null;
             /** Abstention Accuracy */
             abstention_accuracy: number;
             /** Jurisdiction Leaks */
@@ -699,6 +699,11 @@ export interface components {
              * @default ok
              */
             status: string;
+            /**
+             * Mock Mode
+             * @default true
+             */
+            mock_mode: boolean;
             /** Corpus Version */
             corpus_version: string;
             models: components["schemas"]["ModelsStatus"];
@@ -1157,13 +1162,13 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Successful Response */
+            /** @description Server-sent events: stage, result or error, then done. */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "text/event-stream": string;
                 };
             };
             /** @description Validation Error */
@@ -1587,7 +1592,9 @@ export interface operations {
     list_escalations_v1_escalations_get: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Demo-Key"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -1602,6 +1609,15 @@ export interface operations {
                     "application/json": {
                         [key: string]: unknown;
                     }[];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

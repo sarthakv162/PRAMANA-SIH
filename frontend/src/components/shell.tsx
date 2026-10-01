@@ -42,7 +42,8 @@ export function AppShell() {
   const { t } = useTranslation();
   const { asOf, theme, setTheme, uiLanguage } = useAppStore();
   const today = localISODate();
-  const isMock = import.meta.env.VITE_API_MODE !== 'live';
+  const health = useQuery({ queryKey: ['health'], queryFn: api.health });
+  const isMock = health.data?.mock_mode ?? true;
   const [online, setOnline] = useState(() => navigator.onLine);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [sidebarHidden, setSidebarHidden] = useState(false);

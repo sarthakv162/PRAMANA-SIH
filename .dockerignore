@@ -1,0 +1,14 @@
+.git
+.env
+.venv
+**/node_modules
+**/dist
+**/__pycache__
+frontend/test-results
+frontend/playwright-report
+frontend/coverage
+**/.pytest_cache
+corpus/raw/*
+!corpus/raw/.gitkeep
+eval/results/*.json
+!eval/results/.gitkeep

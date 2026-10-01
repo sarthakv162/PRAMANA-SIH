@@ -18,15 +18,40 @@ router = APIRouter(tags=["receipts"])
 _TAMPERED_ID = "rcp_tampered_demo"
 
 
+def _mock_receipt(receipt_id: str) -> Receipt | None:
+    for fixture_name in (
+        "answer_card_in.json",
+        "answer_card_both_hi.json",
+        "refusal_no_evidence.json",
+        "refusal_legal_advice.json",
+    ):
+        payload = load_fixture(fixture_name)
+        if payload.get("receipt_id") == receipt_id:
+            receipt = Receipt.model_validate(load_fixture("receipt.json"))
+            cited_spans = payload.get("evidence") or {
+                span["id"]: span for span in payload.get("nearest_sources", [])
+            }
+            return receipt.model_copy(
+                update={
+                    "id": receipt_id,
+                    "request_id": payload["request_id"],
+                    "chunk_hashes": [span["sha256"] for span in cited_spans.values()],
+                }
+            )
+    return None
+
+
 @router.get("/receipts/{receipt_id}", response_model=Receipt)
 async def get_receipt(receipt_id: str, session: Session = Depends(get_session)) -> Receipt:
     settings = get_settings()
     if settings.mock_mode:
-        receipt = Receipt.model_validate(load_fixture("receipt.json"))
-        if receipt_id != receipt.id and receipt_id != _TAMPERED_ID:
-            raise HTTPException(status_code=404, detail="receipt not found")
+        receipt = _mock_receipt(receipt_id)
         if receipt_id == _TAMPERED_ID:
-            receipt = receipt.model_copy(update={"id": _TAMPERED_ID})
+            receipt = Receipt.model_validate(load_fixture("receipt.json")).model_copy(
+                update={"id": _TAMPERED_ID}
+            )
+        if receipt is None:
+            raise HTTPException(status_code=404, detail="receipt not found")
         return receipt
 
     stored_receipt = receipts_store.get_receipt(session, receipt_id)

@@ -14,17 +14,31 @@ from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 
 from app.config import get_settings
-from app.core.fixtures import load_fixture_text
+from app.core.fixtures import load_fixture, load_fixture_text
 from app.orchestrator.graph import run_query
 from app.schemas.query import QueryRequest
 
 router = APIRouter(tags=["query"])
 
 
-async def _replay_sse_transcript(delay_s: float = 0.15) -> AsyncIterator[bytes]:
+def _mock_result_name(request: QueryRequest) -> str:
+    query_text = request.query.casefold()
+    if any(pattern in query_text for pattern in ("should i file", "will i win", "is this legal for me")):
+        return "refusal_legal_advice.json"
+    if any(pattern in query_text for pattern in ("fees", "unindexed", "unknown topic")):
+        return "refusal_no_evidence.json"
+    if request.jurisdiction.value == "BOTH":
+        return "answer_card_both_hi.json"
+    return "answer_card_in.json"
+
+
+async def _replay_sse_transcript(result_fixture: str, delay_s: float = 0.15) -> AsyncIterator[bytes]:
     transcript = load_fixture_text("sse_transcript.txt")
     events = [chunk for chunk in transcript.split("\n\n") if chunk.strip()]
+    result = load_fixture(result_fixture)
     for chunk in events:
+        if chunk.startswith("event: result\n"):
+            chunk = f"event: result\ndata: {json.dumps(result, separators=(',', ':'))}"
         yield (chunk + "\n\n").encode("utf-8")
         await asyncio.sleep(delay_s)
 
@@ -38,9 +52,22 @@ async def _stream_real_pipeline(request: QueryRequest) -> AsyncIterator[bytes]:
         yield _sse_encode(item["event"], item["data"])
 
 
-@router.post("/query")
+@router.post(
+    "/query",
+    response_class=StreamingResponse,
+    responses={
+        200: {
+            "description": "Server-sent events: stage, result or error, then done.",
+            "content": {"text/event-stream": {"schema": {"type": "string"}}},
+        }
+    },
+)
 async def query(request: QueryRequest) -> StreamingResponse:
     settings = get_settings()
     if settings.mock_mode:
-        return StreamingResponse(_replay_sse_transcript(), media_type="text/event-stream")
+        return StreamingResponse(
+            _replay_sse_transcript(_mock_result_name(request)),
+            media_type="text/event-stream",
+            headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+        )
     return StreamingResponse(_stream_real_pipeline(request), media_type="text/event-stream")

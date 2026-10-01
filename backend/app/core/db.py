@@ -21,8 +21,20 @@ class Base(DeclarativeBase):
     """Reserved for any future ORM-mapped models. No tables are mapped here yet."""
 
 
-engine = create_engine(get_settings().database_url, pool_pre_ping=True, future=True)
+_settings = get_settings()
+engine = create_engine(_settings.database_url, pool_pre_ping=True, future=True)
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False, future=True)
+
+# Corpus writes and promotion use a separate, narrowly-scoped database role. API request
+# handling never receives the ingest credentials.
+ingest_engine = create_engine(
+    _settings.ingest_database_url or _settings.database_url,
+    pool_pre_ping=True,
+    future=True,
+)
+IngestSessionLocal = sessionmaker(
+    bind=ingest_engine, autoflush=False, autocommit=False, future=True
+)
 
 
 @contextmanager
