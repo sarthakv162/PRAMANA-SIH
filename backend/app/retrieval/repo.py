@@ -22,12 +22,14 @@ from pgvector.sqlalchemy import Vector
 from sqlalchemy.dialects.postgresql import TSVECTOR
 from sqlalchemy.orm import Session
 
+from app.core.sql_types import UUID
+
 metadata = sa.MetaData()
 
 corpus_versions = sa.Table(
     "corpus_versions",
     metadata,
-    sa.Column("id", sa.dialects.postgresql.UUID(as_uuid=True), primary_key=True),
+    sa.Column("id", UUID(as_uuid=True), primary_key=True),
     sa.Column("label", sa.Text),
     sa.Column("status", sa.Text),
     sa.Column("merkle_root", sa.Text),
@@ -39,7 +41,7 @@ corpus_versions = sa.Table(
 documents = sa.Table(
     "documents",
     metadata,
-    sa.Column("id", sa.dialects.postgresql.UUID(as_uuid=True), primary_key=True),
+    sa.Column("id", UUID(as_uuid=True), primary_key=True),
     sa.Column("short_key", sa.Text),
     sa.Column("title", sa.Text),
     sa.Column("doc_type", sa.Text),
@@ -56,16 +58,16 @@ documents = sa.Table(
 sections = sa.Table(
     "sections",
     metadata,
-    sa.Column("id", sa.dialects.postgresql.UUID(as_uuid=True), primary_key=True),
-    sa.Column("document_id", sa.dialects.postgresql.UUID(as_uuid=True)),
-    sa.Column("corpus_version_id", sa.dialects.postgresql.UUID(as_uuid=True)),
+    sa.Column("id", UUID(as_uuid=True), primary_key=True),
+    sa.Column("document_id", UUID(as_uuid=True)),
+    sa.Column("corpus_version_id", UUID(as_uuid=True)),
     sa.Column("section_key", sa.Text),
-    sa.Column("path", sa.dialects.postgresql.ARRAY(sa.Text)),
+    sa.Column("path", sa.ARRAY(sa.Text).with_variant(sa.JSON(), "sqlite")),
     sa.Column("heading", sa.Text),
-    sa.Column("parent_id", sa.dialects.postgresql.UUID(as_uuid=True)),
+    sa.Column("parent_id", UUID(as_uuid=True)),
     sa.Column("effective_from", sa.Date),
     sa.Column("effective_to", sa.Date),
-    sa.Column("supersedes_id", sa.dialects.postgresql.UUID(as_uuid=True)),
+    sa.Column("supersedes_id", UUID(as_uuid=True)),
     sa.Column("page_start", sa.Integer),
     sa.Column("page_end", sa.Integer),
     sa.Column("text", sa.Text),
@@ -75,9 +77,9 @@ sections = sa.Table(
 chunks = sa.Table(
     "chunks",
     metadata,
-    sa.Column("id", sa.dialects.postgresql.UUID(as_uuid=True), primary_key=True),
-    sa.Column("section_id", sa.dialects.postgresql.UUID(as_uuid=True)),
-    sa.Column("corpus_version_id", sa.dialects.postgresql.UUID(as_uuid=True)),
+    sa.Column("id", UUID(as_uuid=True), primary_key=True),
+    sa.Column("section_id", UUID(as_uuid=True)),
+    sa.Column("corpus_version_id", UUID(as_uuid=True)),
     sa.Column("jurisdiction", sa.Text),
     sa.Column("doc_type", sa.Text),
     sa.Column("effective_from", sa.Date),
@@ -88,18 +90,18 @@ chunks = sa.Table(
     sa.Column("text", sa.Text),
     sa.Column("embed_text", sa.Text),
     sa.Column("sha256", sa.Text),
-    sa.Column("bboxes", sa.dialects.postgresql.JSONB),
-    sa.Column("embedding", Vector(1024)),
-    sa.Column("tsv", TSVECTOR),
+    sa.Column("bboxes", sa.dialects.postgresql.JSONB().with_variant(sa.JSON(), "sqlite")),
+    sa.Column("embedding", Vector(1024).with_variant(sa.JSON(), "sqlite")),
+    sa.Column("tsv", TSVECTOR().with_variant(sa.Text(), "sqlite")),
 )
 
 edges = sa.Table(
     "edges",
     metadata,
-    sa.Column("src_section_id", sa.dialects.postgresql.UUID(as_uuid=True)),
-    sa.Column("dst_section_id", sa.dialects.postgresql.UUID(as_uuid=True)),
+    sa.Column("src_section_id", UUID(as_uuid=True)),
+    sa.Column("dst_section_id", UUID(as_uuid=True)),
     sa.Column("kind", sa.Text),
-    sa.Column("corpus_version_id", sa.dialects.postgresql.UUID(as_uuid=True)),
+    sa.Column("corpus_version_id", UUID(as_uuid=True)),
 )
 
 

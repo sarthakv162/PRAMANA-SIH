@@ -17,7 +17,7 @@ from typing import Any
 import sqlalchemy as sa
 from sqlalchemy.orm import Session
 
-from app.audit.chain import append_entry, verify_chain_segment
+from app.audit.chain import append_entry, audit_log, verify_chain_segment
 from app.audit.merkle import merkle_proof, verify_proof
 from app.core.hashing import canonical_json, sha256_hex
 from app.retrieval import repo
@@ -111,7 +111,7 @@ def get_receipt(session: Session, receipt_id: str) -> Receipt | None:
     seq = _seq_from_receipt_id(receipt_id)
     if seq is None:
         return None
-    row = session.execute(sa.text("SELECT * FROM audit_log WHERE seq = :seq"), {"seq": seq}).mappings().first()
+    row = session.execute(sa.select(audit_log).where(audit_log.c.seq == seq)).mappings().first()
     if row is None:
         return None
     payload = row["payload"]
@@ -133,7 +133,7 @@ def verify_receipt(session: Session, receipt_id: str) -> VerifyResult | None:
     seq = _seq_from_receipt_id(receipt_id)
     if seq is None:
         return None
-    row = session.execute(sa.text("SELECT * FROM audit_log WHERE seq = :seq"), {"seq": seq}).mappings().first()
+    row = session.execute(sa.select(audit_log).where(audit_log.c.seq == seq)).mappings().first()
     if row is None:
         return None
 

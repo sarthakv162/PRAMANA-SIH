@@ -22,6 +22,9 @@ class Settings(BaseSettings):
     app_db_password: str = Field(default="", alias="APP_DB_PASSWORD")
     ingest_db_password: str = Field(default="", alias="INGEST_DB_PASSWORD")
 
+    inference_runtime: Literal["ollama", "transformers"] = Field(default="ollama", alias="INFERENCE_RUNTIME")
+    storage_mode: Literal["persistent", "ephemeral"] = Field(default="persistent", alias="STORAGE_MODE")
+
     llm_model: Literal["qwen3:4b"] = Field(default="qwen3:4b", alias="LLM_MODEL")
     ollama_base_url: str = Field(default="http://127.0.0.1:11434", alias="OLLAMA_BASE_URL")
     ollama_context_tokens: int = Field(default=8192, ge=1024, le=8192, alias="OLLAMA_CONTEXT_TOKENS")

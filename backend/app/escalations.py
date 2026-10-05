@@ -12,7 +12,7 @@ import uuid
 from typing import Any
 
 import sqlalchemy as sa
-from sqlalchemy.dialects.postgresql import UUID
+from app.core.sql_types import UUID
 from sqlalchemy.orm import Session
 
 from app.core.errors import ApiError

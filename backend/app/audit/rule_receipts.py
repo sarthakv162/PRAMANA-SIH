@@ -12,7 +12,7 @@ from datetime import date
 from typing import Any
 
 import sqlalchemy as sa
-from sqlalchemy.dialects.postgresql import UUID
+from app.core.sql_types import UUID
 from sqlalchemy.orm import Session
 
 from app.audit.receipts import build_receipt

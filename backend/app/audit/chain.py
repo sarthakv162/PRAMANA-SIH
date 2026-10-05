@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from typing import Any
 
 import sqlalchemy as sa
-from sqlalchemy.dialects.postgresql import JSONB, UUID
+from app.core.sql_types import UUID
 from sqlalchemy.orm import Session
 
 from app.core.hashing import chain_entry_hash
@@ -19,11 +19,11 @@ GENESIS_HASH = "0" * 64
 audit_log = sa.Table(
     "audit_log",
     sa.MetaData(),
-    sa.Column("seq", sa.BigInteger, primary_key=True),
+    sa.Column("seq", sa.BigInteger().with_variant(sa.Integer(), "sqlite"), primary_key=True),
     sa.Column("request_id", UUID(as_uuid=True)),
     sa.Column("prev_hash", sa.Text),
     sa.Column("entry_hash", sa.Text),
-    sa.Column("payload", JSONB),
+    sa.Column("payload", sa.JSON().with_variant(sa.dialects.postgresql.JSONB(), "postgresql")),
     sa.Column("created_at", sa.DateTime(timezone=True)),
 )
 
@@ -44,7 +44,13 @@ def append_entry(session: Session, request_id: str, entry: dict[str, Any]) -> Ch
     extend the same predecessor (including when the chain is empty). The advisory lock is
     independent of table contents and remains held until the caller commits.
     """
-    session.execute(sa.text("SELECT pg_advisory_xact_lock(:lock_key)"), {"lock_key": 5784116599020218673})
+    if session.get_bind().dialect.name == "postgresql":
+        session.execute(sa.text("SELECT pg_advisory_xact_lock(:lock_key)"), {"lock_key": 5784116599020218673})
+    else:
+        # A file-backed SQLite writer lock also works across ZeroGPU worker processes.
+        connection = session.connection()
+        if not connection.connection.driver_connection.in_transaction:
+            connection.exec_driver_sql("BEGIN IMMEDIATE")
     last = session.execute(sa.select(audit_log.c.entry_hash).order_by(audit_log.c.seq.desc()).limit(1)).first()
     prev_hash = last.entry_hash if last else GENESIS_HASH
 

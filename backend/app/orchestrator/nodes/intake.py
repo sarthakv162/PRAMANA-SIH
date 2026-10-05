@@ -9,7 +9,7 @@ import uuid
 from datetime import UTC, date, datetime, timedelta
 
 import sqlalchemy as sa
-from sqlalchemy.dialects.postgresql import UUID
+from app.core.sql_types import UUID
 from sqlalchemy.orm import Session
 
 from app.config import get_settings

@@ -11,7 +11,7 @@ to reverse-engineer from an ORM mapping. Modules that need typed row access shou
 from collections.abc import Iterator
 from contextlib import contextmanager
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, event
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
 from app.config import get_settings
@@ -22,7 +22,13 @@ class Base(DeclarativeBase):
 
 
 _settings = get_settings()
-engine = create_engine(_settings.database_url, pool_pre_ping=True, future=True)
+_options = {"connect_args": {"check_same_thread": False, "timeout": 60}} if _settings.database_url.startswith("sqlite:") else {}
+engine = create_engine(_settings.database_url, pool_pre_ping=True, future=True, **_options)
+if engine.dialect.name == "sqlite":
+    @event.listens_for(engine, "connect")
+    def sqlite_connection(connection, _):
+        connection.execute("PRAGMA foreign_keys=ON")
+        connection.execute("PRAGMA busy_timeout=60000")
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False, future=True)
 
 # Corpus writes and promotion use a separate, narrowly-scoped database role. API request
@@ -31,6 +37,7 @@ ingest_engine = create_engine(
     _settings.ingest_database_url or _settings.database_url,
     pool_pre_ping=True,
     future=True,
+    **_options,
 )
 IngestSessionLocal = sessionmaker(bind=ingest_engine, autoflush=False, autocommit=False, future=True)
 
