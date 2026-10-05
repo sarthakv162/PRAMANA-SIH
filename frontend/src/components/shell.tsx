@@ -40,7 +40,7 @@ function GlobalControls() {
 
 export function AppShell() {
   const { t } = useTranslation();
-  const { asOf, theme, setTheme, uiLanguage } = useAppStore();
+  const { asOf, refreshAsOf, theme, setTheme, uiLanguage } = useAppStore();
   const today = localISODate();
   const health = useQuery({ queryKey: ['health'], queryFn: api.health });
   const isMock = health.data?.mock_mode ?? true;
@@ -49,6 +49,22 @@ export function AppShell() {
   const [sidebarHidden, setSidebarHidden] = useState(false);
   const [isMobile, setIsMobile] = useState(() => typeof window.matchMedia === 'function' && window.matchMedia('(max-width: 640px)').matches);
   const topbarRef = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    // A cached browser page can reopen without reloading or rehydrating the store.
+    const onPageShow = (event: PageTransitionEvent) => refreshAsOf(event.persisted);
+    const onFocus = () => refreshAsOf();
+    const onVisibility = () => { if (document.visibilityState === 'visible') refreshAsOf(); };
+    window.addEventListener('pageshow', onPageShow);
+    window.addEventListener('focus', onFocus);
+    document.addEventListener('visibilitychange', onVisibility);
+    const interval = window.setInterval(onFocus, 60_000);
+    return () => {
+      window.removeEventListener('pageshow', onPageShow);
+      window.removeEventListener('focus', onFocus);
+      document.removeEventListener('visibilitychange', onVisibility);
+      window.clearInterval(interval);
+    };
+  }, [refreshAsOf]);
   useEffect(() => { const onOnline = () => setOnline(true); const onOffline = () => setOnline(false); window.addEventListener('online', onOnline); window.addEventListener('offline', onOffline); return () => { window.removeEventListener('online', onOnline); window.removeEventListener('offline', onOffline); }; }, []);
   useEffect(() => {
     const media = window.matchMedia('(max-width: 640px)');

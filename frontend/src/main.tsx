@@ -29,7 +29,7 @@ const EvalPage = React.lazy(() => import('./pages/eval').then((module) => ({ def
 const AdminPage = React.lazy(() => import('./pages/admin').then((module) => ({ default: module.AdminPage })));
 const ComponentsPage = React.lazy(() => import('./pages/components-gallery').then((module) => ({ default: module.ComponentsPage })));
 
-const queryClient = new QueryClient({ defaultOptions: { queries: { staleTime: 30_000, retry: 1, refetchOnWindowFocus: false } } });
+const queryClient = new QueryClient({ defaultOptions: { queries: { staleTime: 30_000, retry: 1, refetchOnWindowFocus: true } } });
 const mode = import.meta.env.VITE_API_MODE ?? 'live';
 
 async function bootstrap() {

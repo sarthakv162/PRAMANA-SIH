@@ -1,5 +1,7 @@
 # Verification report — 4 October 2026
 
+Later dated checks are appended below; this report's heading records the initial verification date.
+
 The application is connected to native Ollama, PostgreSQL, real source PDFs and server citation verification. A real supported query produced verified synthesis and valid receipt proofs. **The complete plan cannot be marked finished: the rebuilt Qwen corpus fails extraction quality review and has not been promoted or approved.**
 
 ## Implemented and checked
@@ -118,5 +120,22 @@ Additional checks passed: 71 selected backend/contract tests covering speech, ge
 The exported real-data archive is `backups/demo-seed.tar.gz` (160,120,433 bytes at this check). It includes corpus/reference/review data and pinned PDFs, with no conversations, saved results, contacts or audit payloads. Existing version status is preserved. The import does not promote the failing staged Qwen corpus.
 
 Hash checking identified two version records for the same biodiversity PDF whose current file differs from its stored hash. No intact copy with that hash was found in the local corpus. The PDF endpoint now rejects mismatches with `409 pdf_unavailable`; matching PDFs are served normally. This source's original PDF still needs recovery or a reviewed replacement. Other previously recorded corpus quality limits and the missing real Sarvam key remain open.
+
+## Current-date opening and corpus approval check — 5 October 2026
+
+The user requires explicit permission before every GitHub push. This instruction is recorded in root `AGENTS.md`. At the time these checks were completed, the changes remained local and no push or remote deployment had been performed. The user subsequently explicitly authorized pushing this update to GitHub.
+
+The running database confirms `local-qwen-2026-10-04` is staged with 46 quality issues, a null reviewer and no approval. The actual `promote()` entry point was exercised in a read-only transaction and rejected it with “Promotion requires a passing source/extraction/golden report and named reviewer approval.” Live corpus `2026-10-03-fed342` remains unchanged and uses keyword retrieval because its embedding space is incompatible with Qwen. The implemented approval gate is working; extraction repair and approved Qwen promotion remain outstanding. Machine-readable evidence: `eval/results/corpus-approval-check.json`.
+
+The browser previously persisted `asOf`, so reopening could reuse an older query date. The frontend now stores only UI preferences, migrates old saved state and computes today's date in the browser's local time on every opening/reload. Historical selections apply during the current session. Default today mode advances after midnight on focus/visibility or the periodic check, and a page restored from the browser's back/forward cache resets to today. Clearing the date input returns to today. API reads bypass browser HTTP caching, and stale query data refreshes on window focus. Saved answer dates, source-check timestamps and corpus ingestion labels retain their original meaning; the current query date does not certify unreviewed amendments.
+
+Validation: 35 frontend unit tests and 14 source-review backend tests passed. Frontend lint, TypeScript and production build passed. Two Playwright tests passed against the rebuilt production website at `http://127.0.0.1:8080`, including the actual classification request/response, old preference migration, reload, theme retention, midnight advancement and browser-restoration handling. The midnight and restoration events are simulated browser events for regression testing; backend classification responses are real. Only the local frontend container was rebuilt/restarted.
+
+To repeat the date browser checks after building the local frontend:
+
+```sh
+cd frontend
+PLAYWRIGHT_BASE_URL=http://127.0.0.1:8080 npx playwright test e2e/fresh-date.spec.ts --workers=1
+```
 
 Deployment instructions: `docs/DEPLOYMENT_GUIDE.md`; portable image: root `Dockerfile`; public server stack: `docker-compose.demo.yml`. The README retains all 25 second-level sections from the supplied reference format.

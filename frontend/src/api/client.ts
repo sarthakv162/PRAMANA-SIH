@@ -36,7 +36,7 @@ const BASE_URL = (import.meta.env.VITE_API_BASE_URL || '/v1').replace(/\/$/, '')
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const headers = new Headers({ ...workspaceHeaders(), ...Object.fromEntries(new Headers(init.headers)) });
   if (init.body && !(init.body instanceof FormData)) headers.set('Content-Type', 'application/json');
-  const response = await fetch(`${BASE_URL}${path}`, { ...init, headers });
+  const response = await fetch(`${BASE_URL}${path}`, { cache: 'no-store', ...init, headers });
   if (!response.ok) {
     let body: Partial<ApiError> = {};
     try { body = await response.json() as ApiError; } catch { /* Error responses can be empty. */ }

@@ -34,7 +34,7 @@ The local default authorizes shared history with `X-Demo-Key`; the public hosted
 - Email, phone, Aadhaar, PAN and GSTIN identifiers are scrubbed before saving. This is a structured-identifier scrubber, not a guarantee that arbitrary personal names or prose are anonymized. Users see the shared-workspace and retention notice.
 - Messages and result payloads expire independently after 30 days. Conversations expire after 30 days of inactivity. Delete cascades remove their messages, results and dependent case references. Expired content is filtered on reads and physically purged by maintenance.
 - New audit entries retain hashes/provenance rather than full conversation/result payloads; saved content is stored separately so expiry can operate without changing the append-only receipt chain. Existing pre-migration audit entries remain historical records and are not rewritten silently.
-- Workspace credentials live in browser session storage. UI preferences may remain in local storage; shared history, case results and formulation drafts are not persisted there.
+- Workspace credentials live in browser session storage. UI preferences may remain in local storage; shared history, case results and formulation drafts are not persisted there. The query's “As of” date defaults to the browser's current local date on every opening/reload and is not saved as a preference. Historical dates apply only to the current session; saved answers retain their original dates and corpus versions.
 
 ## Routing and corpus coverage
 
