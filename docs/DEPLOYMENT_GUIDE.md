@@ -1,6 +1,8 @@
-# PRAMANA: simple free demo deployment
+# PRAMANA: deployment options
 
-This guide runs the real app on a server, independently of your Mac. The demo is public: judges can query, resume shared history and use case files without entering a key. Ollama still runs the two specified Qwen models on the server; no cloud LLM or mock answer provider is introduced.
+The selected free judging deployment is now **Hugging Face ZeroGPU**. Start with [the ZeroGPU guide](HUGGING_FACE_DEPLOYMENT.md): it preserves the website, uses real Qwen inference and citation verification, and needs neither managed PostgreSQL nor paid disk. Browser reload retains temporary history; server restart resets it. No public Space has been deployed yet.
+
+The remaining instructions document the earlier optional Oracle VM deployment. This VM approach runs the real app on a server, independently of your Mac. The demo is public: judges can query, resume shared history and use case files without entering a key. Ollama still runs the two specified Qwen models on the server; no cloud LLM or mock answer provider is introduced.
 
 ## Hosting choice
 
@@ -25,7 +27,7 @@ The Mac's original `docker-compose.yml` remains its local workflow. Do not use i
 
 ## 1. Prepare the actual code and corpus
 
-Push the reviewed project changes to your GitHub repository before cloning on the server. New deployment files must be included; `.env`, `.env.deploy`, `deploy/data`, backups, models and generated dumps stay out of Git.
+Only after explicit permission for that push, publish the reviewed project changes to your GitHub repository before cloning on the server. New deployment files must be included; `.env`, `.env.deploy`, `deploy/data`, backups, models and generated dumps stay out of Git.
 
 On the Mac, with the existing database running:
 

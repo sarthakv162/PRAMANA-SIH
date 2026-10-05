@@ -32,7 +32,9 @@ class OllamaClient(LlmClient):
     def _complete(self, system: str, user: str, schema: dict[str, object] | None = None) -> str:
         settings = get_settings()
         options: dict[str, int | float] = {
-            "num_ctx": settings.ollama_context_tokens, "temperature": 0, "num_predict": 1536,
+            "num_ctx": settings.ollama_context_tokens,
+            "temperature": 0,
+            "num_predict": 1536,
         }
         if settings.ollama_num_threads is not None:
             options["num_thread"] = settings.ollama_num_threads
@@ -87,4 +89,8 @@ class OllamaClient(LlmClient):
 
 
 def get_llm_client() -> LlmClient:
+    if get_settings().inference_runtime == "transformers":
+        from app.generation.transformers_runtime import TransformersClient
+
+        return TransformersClient()
     return OllamaClient()

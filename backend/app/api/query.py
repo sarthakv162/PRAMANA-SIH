@@ -16,6 +16,7 @@ from fastapi.responses import StreamingResponse
 from app.api.conversations import authorize_workspace
 from app.config import get_settings
 from app.core.db import SessionLocal
+from app.core.errors import ApiError
 from app.core.fixtures import load_fixture, load_fixture_text
 from app.history.service import require_conversation
 from app.orchestrator.graph import run_query
@@ -69,6 +70,8 @@ async def _stream_real_pipeline(request: QueryRequest) -> AsyncIterator[bytes]:
 )
 async def query(request: QueryRequest, x_demo_key: str = Header(default="")) -> StreamingResponse:
     settings = get_settings()
+    if settings.query_transport == "gradio":
+        raise ApiError("queue_required", "Use the Gradio query endpoint for ZeroGPU allocation and queueing.", 409)
     if request.conversation_id:
         authorize_workspace(x_demo_key)
         with SessionLocal() as session:

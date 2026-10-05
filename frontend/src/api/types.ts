@@ -114,7 +114,7 @@ export interface EscalationItem { ticket_id: string; request_id: string; contact
 export interface AsrResponse { text: string; language: Language }
 /** models is a fixed {llm, embed, nli} object per backend/app/schemas/health.py::ModelsStatus. */
 export interface ModelsStatus { llm: string; embed: string; nli: string }
-export interface HealthResponse { status: string; mock_mode: boolean; corpus_version: string; models: ModelsStatus; public_demo_mode?: boolean }
+export interface HealthResponse { status: string; mock_mode: boolean; corpus_version: string; models: ModelsStatus; public_demo_mode?: boolean; inference_runtime?: 'ollama' | 'transformers'; storage_mode?: 'persistent' | 'ephemeral'; query_transport?: 'sse' | 'gradio' }
 export type DossierFormat = 'pdf' | 'docx' | 'md';
 
 export const QUERY_STAGES = ['intake', 'frame', 'cache', 'route', 'retrieve', 'resolve', 'generate', 'verify', 'render', 'audit'] as const;

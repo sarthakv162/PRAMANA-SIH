@@ -937,6 +937,12 @@ export interface components {
              * @default false
              */
             public_demo_mode: boolean;
+            /** @default ollama */
+            inference_runtime: string;
+            /** @default persistent */
+            storage_mode: string;
+            /** @default sse */
+            query_transport: string;
         };
         /** Highlight */
         Highlight: {

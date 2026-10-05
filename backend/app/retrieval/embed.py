@@ -19,6 +19,10 @@ class EmbeddingUnavailable(Exception):
 
 def embed_texts(texts: list[str]) -> list[list[float]]:
     settings = get_settings()
+    if settings.inference_runtime == "transformers":
+        from app.generation.transformers_runtime import embed_texts as transformer_embeddings
+
+        return transformer_embeddings(texts)
     options = {"num_ctx": 2048}
     if settings.ollama_num_threads is not None:
         options["num_thread"] = settings.ollama_num_threads

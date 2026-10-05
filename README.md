@@ -636,7 +636,7 @@ npm --prefix frontend run types:generate
 
 PRAMANA uses the existing Dockerfiles and Compose stack: **PostgreSQL + backend + frontend + weekly source monitor**, with **native Ollama on the Mac**.
 
-For a simple public judging demo independent of your Mac, use the root `Dockerfile` and `docker-compose.demo.yml` on an eligible **Oracle Always Free ARM VM**. The [deployment guide](docs/DEPLOYMENT_GUIDE.md) gives the setup, real corpus transfer and verification commands. The hosted demo opens history and case files without a key. No public deployment has been created yet.
+For the selected free judging demo, use **Hugging Face ZeroGPU** under `RJ8307`. The [ZeroGPU deployment guide](docs/HUGGING_FACE_DEPLOYMENT.md) explains the upload bundle, eligibility, real corpus transfer and tests. This profile preserves the website and citation pipeline, runs the same Qwen model families through PyTorch on ZeroGPU, and uses temporary SQLite instead of hosted PostgreSQL or paid disk. History and receipts reset on server restart. The Mac defaults remain native Ollama and PostgreSQL. No public deployment has been completed yet.
 
 ### 1. Prerequisites
 

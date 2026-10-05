@@ -1732,6 +1732,15 @@ components:
           type: boolean
           title: Public Demo Mode
           default: false
+        inference_runtime:
+          type: string
+          default: ollama
+        storage_mode:
+          type: string
+          default: persistent
+        query_transport:
+          type: string
+          default: sse
       additionalProperties: false
       type: object
       required:

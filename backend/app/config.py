@@ -3,6 +3,7 @@
 from functools import lru_cache
 from pathlib import Path
 from typing import Literal
+from uuid import uuid4
 
 from pydantic import Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -24,6 +25,10 @@ class Settings(BaseSettings):
 
     inference_runtime: Literal["ollama", "transformers"] = Field(default="ollama", alias="INFERENCE_RUNTIME")
     storage_mode: Literal["persistent", "ephemeral"] = Field(default="persistent", alias="STORAGE_MODE")
+    query_transport: Literal["sse", "gradio"] = Field(default="sse", alias="QUERY_TRANSPORT")
+    receipt_namespace: str = Field(
+        default_factory=lambda: uuid4().hex[:12], pattern=r"^[a-f0-9]{12}$", alias="RECEIPT_NAMESPACE"
+    )
 
     llm_model: Literal["qwen3:4b"] = Field(default="qwen3:4b", alias="LLM_MODEL")
     ollama_base_url: str = Field(default="http://127.0.0.1:11434", alias="OLLAMA_BASE_URL")
@@ -105,3 +110,17 @@ class Settings(BaseSettings):
 @lru_cache
 def get_settings() -> Settings:
     return Settings()
+
+
+def answer_model_id(settings: Settings | None = None) -> str:
+    settings = settings or get_settings()
+    return "Qwen/Qwen3-4B" if getattr(settings, "inference_runtime", "ollama") == "transformers" else settings.llm_model
+
+
+def embedding_model_id(settings: Settings | None = None) -> str:
+    settings = settings or get_settings()
+    return (
+        "Qwen/Qwen3-Embedding-0.6B"
+        if getattr(settings, "inference_runtime", "ollama") == "transformers"
+        else settings.embed_model
+    )

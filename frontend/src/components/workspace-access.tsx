@@ -1,9 +1,11 @@
 import { useState } from 'react';
-import { isPublicDemo, setWorkspaceKey, workspaceKey } from '../api/client';
+import { isEphemeralDemo, isPublicDemo, setWorkspaceKey, workspaceKey } from '../api/client';
 
 export function WorkspaceAccess({ onConnect }: { onConnect?: () => void }) {
   const [key, setKey] = useState(workspaceKey);
-  if (isPublicDemo()) return <p className="small-muted">Public demo: everyone shares saved history and case files. Content expires after 30 days.</p>;
+  if (isPublicDemo()) return <p className="small-muted">{isEphemeralDemo()
+    ? 'Public demo: everyone shares temporary history and case files. They reset when the server restarts; download your dossier to keep a copy.'
+    : 'Public demo: everyone shares saved history and case files. Content expires after 30 days.'}</p>;
   return <form className="workspace-access" onSubmit={(event) => { event.preventDefault(); setWorkspaceKey(key.trim()); onConnect?.(); }}>
     <label>Demo workspace key<input type="password" value={key} onChange={(event) => setKey(event.target.value)} autoComplete="off" placeholder="Enter the shared demo key" /></label>
     <button className="button button-secondary" type="submit">Connect history</button>

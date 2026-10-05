@@ -15,7 +15,7 @@ import './styles.css';
 import { AppShell } from './components/shell';
 import { LoadingBlock } from './components/ui';
 import { useAppStore } from './state/store';
-import { api, setPublicDemo } from './api/client';
+import { api, configureDeployment } from './api/client';
 
 const AskPage = React.lazy(() => import('./pages/ask').then((module) => ({ default: module.AskPage })));
 const ClassificationPage = React.lazy(() => import('./pages/classification').then((module) => ({ default: module.ClassificationPage })));
@@ -40,7 +40,7 @@ async function bootstrap() {
   // The server owns demo access policy; no key or deployment secret is bundled in JS.
   try {
     const health = await api.health();
-    setPublicDemo(health.public_demo_mode === true);
+    configureDeployment(health);
     queryClient.setQueryData(['health'], health);
   } catch { /* Pages show API availability errors and remain usable for retry. */ }
   const { uiLanguage, theme } = useAppStore.getState();

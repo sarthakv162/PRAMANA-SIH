@@ -13,7 +13,7 @@ from datetime import date
 
 from sqlalchemy.orm import Session
 
-from app.config import get_settings
+from app.config import embedding_model_id
 from app.retrieval import embed, keyword, repo
 
 RRF_K = 60
@@ -49,7 +49,7 @@ def hybrid_retrieve(
     (IN before INTL — §5.2's ordering rule for `AnswerCard.sections`).
     """
     query_vector = None
-    if repo.embedding_model_for_version(session, corpus_version_id) == get_settings().embed_model:
+    if repo.embedding_model_for_version(session, corpus_version_id) == embedding_model_id():
         try:
             query_vector = embed.embed_query(query_en)
         except embed.EmbeddingUnavailable:

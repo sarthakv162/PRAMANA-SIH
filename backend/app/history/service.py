@@ -147,7 +147,10 @@ def get_result(session: Session, request_id: str) -> dict[str, Any]:
     )
     if row is None:
         raise ApiError("result_not_found", "Saved result not found or expired.", 404)
-    if session.get_bind().dialect.name == "postgresql" or getattr(get_settings(), "storage_mode", "persistent") == "ephemeral":
+    if (
+        session.get_bind().dialect.name == "postgresql"
+        or getattr(get_settings(), "storage_mode", "persistent") == "ephemeral"
+    ):
         # Bind the expiring copy to the append-only audit row. Receipt IDs are assigned
         # after hashing, so restore the original field for canonical hash validation.
         from app.audit.chain import audit_log
@@ -155,7 +158,8 @@ def get_result(session: Session, request_id: str) -> dict[str, Any]:
         audit = session.execute(
             sa.select(audit_log.c.payload, audit_log.c.entry_hash)
             .where(audit_log.c.request_id == request_id)
-            .order_by(audit_log.c.seq.desc()).limit(1)
+            .order_by(audit_log.c.seq.desc())
+            .limit(1)
         ).first()
         if audit is None or audit.entry_hash != row["entry_hash"]:
             raise ApiError("result_integrity_failed", "Saved result integrity check failed.", 409)

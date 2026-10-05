@@ -12,11 +12,11 @@ from datetime import date
 from typing import Any
 
 import sqlalchemy as sa
-from app.core.sql_types import UUID
 from sqlalchemy.orm import Session
 
 from app.audit.receipts import build_receipt
 from app.core.hashing import canonical_json, sha256_hex
+from app.core.sql_types import UUID
 from app.retrieval.evidence_pack import NumberedSpan
 from app.schemas.evidence import EvidenceSpan
 from app.schemas.receipts import ModelIds

@@ -272,6 +272,21 @@ def dense_search(
     report the similarity back to the caller for confidence scoring (§6.7).
     """
     base = retrievable_chunks(corpus_version_id, jurisdictions, as_of, doc_types, doc_keys)
+    if session.get_bind().dialect.name == "sqlite":
+        import math
+
+        norm = math.sqrt(sum(v * v for v in query_vector))
+        if not norm:
+            return []
+        scored = []
+        for row in session.execute(base).all():
+            vector = row.embedding
+            if not vector or len(vector) != len(query_vector):
+                continue
+            denom = norm * math.sqrt(sum(v * v for v in vector))
+            if denom:
+                scored.append((row, sum(a * b for a, b in zip(vector, query_vector, strict=True)) / denom))
+        return sorted(scored, key=lambda item: item[1], reverse=True)[:top_n]
     distance = chunks.c.embedding.cosine_distance(query_vector)
     stmt = base.add_columns(distance.label("distance")).order_by(distance).limit(top_n)
     rows = session.execute(stmt).all()
@@ -297,6 +312,16 @@ def keyword_search(
     words = re.findall(r"\w+", tsquery)
     if not words:
         return []
+    if session.get_bind().dialect.name == "sqlite":
+        # The packaged corpus has a real FTS5 index with Porter stemming and BM25.
+        # Reapply the same legal filters before ranking eligible chunks.
+        matches = session.execute(
+            sa.text("SELECT chunk_id, bm25(chunks_fts) AS rank FROM chunks_fts WHERE chunks_fts MATCH :query"),
+            {"query": " OR ".join(f'"{word}"' for word in words)},
+        ).all()
+        ranks = {row.chunk_id: -float(row.rank) for row in matches}
+        rows = session.execute(base.where(chunks.c.id.in_(ranks))).all()
+        return sorted(((row, ranks[str(row.id)]) for row in rows), key=lambda item: item[1], reverse=True)[:top_n]
     exact = sa.func.websearch_to_tsquery("english", tsquery)
     # Natural questions rarely put all their lexemes in a single legal clause. Prefer
     # exact matches, then rank relaxed matches by proximity with document-length
@@ -326,6 +351,22 @@ def trigram_search(
     that `websearch_to_tsquery` tokenises badly. Joins through `sections` but still gates on
     `retrievable_chunks` for the chunk rows it returns.
     """
+    if session.get_bind().dialect.name == "sqlite":
+        from difflib import SequenceMatcher
+
+        eligible = session.execute(retrievable_chunks(corpus_version_id, jurisdictions, as_of, doc_keys=doc_keys)).all()
+        by_id = {
+            str(row.id): row for row in fetch_sections_by_ids(session, list({str(r.section_id) for r in eligible}))
+        }
+        scores = {
+            key: max(
+                SequenceMatcher(None, text.lower(), (value or "").lower()).ratio()
+                for value in (row.section_key, row.heading)
+            )
+            for key, row in by_id.items()
+        }
+        ranked = [(row, scores[str(row.section_id)]) for row in eligible if scores[str(row.section_id)] > 0.2]
+        return sorted(ranked, key=lambda item: item[1], reverse=True)[:top_n]
     similarity = sa.func.greatest(
         sa.func.similarity(sections.c.section_key, text),
         sa.func.similarity(sa.func.coalesce(sections.c.heading, ""), text),
@@ -474,3 +515,20 @@ def document_artifact(session: Session, doc_key: str, version_label: str) -> Any
         .mappings()
         .first()
     )
+
+
+def snapshot_rows(session: Session, version_id: str) -> dict[str, list[dict[str, Any]]]:
+    """Export one actual live version, without request/history/audit content."""
+    section_rows = (
+        session.execute(sa.select(sections).where(sections.c.corpus_version_id == version_id)).mappings().all()
+    )
+    doc_ids = {row["document_id"] for row in section_rows}
+    statements = {
+        "corpus_versions": sa.select(corpus_versions).where(corpus_versions.c.id == version_id),
+        "documents": sa.select(documents).where(documents.c.id.in_(doc_ids)),
+        "sections": sa.select(sections).where(sections.c.corpus_version_id == version_id),
+        "chunks": sa.select(chunks).where(chunks.c.corpus_version_id == version_id),
+        "edges": sa.select(edges).where(edges.c.corpus_version_id == version_id),
+        "document_versions": sa.select(document_versions).where(document_versions.c.corpus_version_id == version_id),
+    }
+    return {name: [dict(row) for row in session.execute(stmt).mappings()] for name, stmt in statements.items()}

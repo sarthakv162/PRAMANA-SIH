@@ -8,6 +8,14 @@ import type { CaseRef, ConversationSummary, ConversationDetail, SavedResult, Cov
 
 export const workspaceKey = () => sessionStorage.getItem('pramana-workspace-key') || '';
 let publicDemo = false;
+let queryTransport: 'sse' | 'gradio' = 'sse';
+let ephemeral = false;
+export const isEphemeralDemo = () => ephemeral;
+export function configureDeployment(health: HealthResponse) {
+  setPublicDemo(health.public_demo_mode === true);
+  ephemeral = health.storage_mode === 'ephemeral';
+  queryTransport = health.query_transport === 'gradio' ? 'gradio' : 'sse';
+}
 export const isPublicDemo = () => publicDemo;
 export const workspaceConnected = () => publicDemo || Boolean(workspaceKey());
 export function setPublicDemo(enabled: boolean) { publicDemo = enabled; }
@@ -47,6 +55,10 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
 }
 
 export async function querySSE(body: QueryRequest, signal: AbortSignal, onStage: (stage: StageEvent) => void): Promise<import('./types').QueryCard> {
+  if (queryTransport === 'gradio') {
+    const { queryQueued } = await import('./gradio');
+    return queryQueued(body, signal, onStage);
+  }
   const headers = new Headers({ 'Content-Type': 'application/json', Accept: 'text/event-stream', ...workspaceHeaders() });
   const response = await fetch(`${BASE_URL}/query`, { method: 'POST', headers, body: JSON.stringify(body), signal });
   if (!response.ok || !response.body) throw new Error(`Query failed (${response.status})`);

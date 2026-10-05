@@ -9,13 +9,13 @@ import uuid
 from datetime import UTC, date, datetime, timedelta
 
 import sqlalchemy as sa
-from app.core.sql_types import UUID
 from sqlalchemy.orm import Session
 
 from app.config import get_settings
 from app.core.deadline import Deadline
 from app.core.hashing import sha256_hex
 from app.core.logging import get_logger
+from app.core.sql_types import UUID
 from app.intake.langid import detect_language
 from app.intake.pii import scrub_pii
 from app.intake.translate import translate_to_english

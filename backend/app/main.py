@@ -112,7 +112,7 @@ async def enforce_ip_rate_limit(request: Request, call_next: Callable[[Request],
 
 register_error_handlers(app)
 
-for router in (
+API_ROUTERS = (
     health.router,
     query.router,
     conversations.router,
@@ -127,5 +127,6 @@ for router in (
     speech.router,
     escalations.router,
     eval_api.router,
-):
+)
+for router in API_ROUTERS:
     app.include_router(router, prefix="/v1")

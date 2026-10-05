@@ -9,7 +9,7 @@ from typing import Any
 from sqlalchemy.orm import Session
 
 from app.audit.receipts import build_receipt
-from app.config import get_settings
+from app.config import answer_model_id, embedding_model_id, get_settings
 from app.generation.prompts import PROMPT_VERSION
 from app.orchestrator.state import RequestState
 from app.retrieval.evidence_pack import NumberedSpan
@@ -25,8 +25,8 @@ def run(session: Session, state: RequestState, result_payload: dict[str, Any]) -
         query_hash=state.query_hash,
         cited_spans=[item for item in state.evidence_pack if _cited(item, result_payload)],
         model_ids=ModelIds(
-            llm=settings.llm_model if state.generation is not None else "none",
-            embed=settings.embed_model if state.used_dense_retrieval else "none",
+            llm=answer_model_id(settings) if state.generation is not None else "none",
+            embed=embedding_model_id(settings) if state.used_dense_retrieval else "none",
             nli=settings.nli_model if state.resolved_claims else "none",
         ),
         prompt_version=PROMPT_VERSION,

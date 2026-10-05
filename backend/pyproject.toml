@@ -61,7 +61,7 @@ strict = true
 # stub-hunting isn't worth it for a prototype (langdetect has no py.typed at all, pymupdf's
 # stubs are already handled inline via targeted `type: ignore`s where they bite).
 [[tool.mypy.overrides]]
-module = ["langdetect", "langdetect.*"]
+module = ["langdetect", "langdetect.*", "lmformatenforcer", "lmformatenforcer.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]

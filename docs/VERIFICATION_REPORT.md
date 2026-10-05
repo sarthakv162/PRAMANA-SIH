@@ -139,3 +139,68 @@ PLAYWRIGHT_BASE_URL=http://127.0.0.1:8080 npx playwright test e2e/fresh-date.spe
 ```
 
 Deployment instructions: `docs/DEPLOYMENT_GUIDE.md`; portable image: root `Dockerfile`; public server stack: `docker-compose.demo.yml`. The README retains all 25 second-level sections from the supplied reference format.
+
+
+## ZeroGPU demo preparation — 5 October 2026
+
+The selected host is now Hugging Face ZeroGPU under `RJ8307`, subject to email
+verification and available free allocation. The account's public creation date is
+3 December 2025. No Space upload or public judging link has been completed.
+
+The new hosted profile keeps the production React website and the existing
+request graph, while using Gradio's queue and PyTorch Qwen models. The Mac profile
+still defaults to Ollama/PostgreSQL. An embedded temporary SQLite file replaces
+managed PostgreSQL and paid persistent disk in the Space. History survives browser
+reload during a server session and resets on restart; the UI explains that limit.
+
+The actual live corpus export contains 28 documents, 3,664 sections/chunks and
+223 edges. Text hashes, corpus Merkle root, seed checksum and every copied PDF
+hash were checked. User-content/audit/request/escalation tables are empty in the
+seed, and no staged version is exported. One Biological Diversity Act PDF has a
+pre-existing pinned-hash mismatch and remains unavailable. The live legacy vector
+index is still incompatible with Qwen, so real FTS5/BM25 search runs instead of
+silently using or promoting the rejected Qwen stage.
+
+Checks completed:
+
+- 281 backend unit/contract tests passed, including eleven new portable-storage and
+  hosted-adapter tests. Adapter doubles are explicitly unit-test data, not a GPU
+  execution claim.
+- 16 existing PostgreSQL invariant tests passed against the running database.
+- 41 frontend unit tests passed; lint, TypeScript and production build passed.
+- Backend Ruff passed; mypy passed across 127 source files.
+- Two production current-date browser checks passed.
+- One production Gradio browser check passed: real queue request, real answer,
+  browser reload/resume, bundled PDF worker, cited-page highlight, fixed sidebar
+  while the main pane scrolled, and no browser page errors.
+- A real section 3(p) question through the Gradio queue and temporary store
+  produced one verified claim with two citations in about 9.5 seconds. Saved-result
+  lookup, chain/Merkle verification, case references, matching PDFs, and PDF/Word
+  dossier exports passed. This used actual native Ollama and the actual verifier
+  to test the transport/storage path. Actual ZeroGPU model execution and resource
+  usage remain unverified until deployment.
+
+Local evidence is recorded in `eval/results/space-storage-check.json` and
+`eval/results/screenshots/space-{desktop,cited-pdf}.png`. These artifacts are not
+presented as cloud measurements. The upload bundle is in
+`deploy/data/space-demo`; its code matches the current source, contains no `.env`,
+and its data is excluded from Git. The root README heading format is preserved.
+
+See [the ZeroGPU deployment guide](HUGGING_FACE_DEPLOYMENT.md) for architecture,
+tradeoffs, upload instructions, judging checks, quotas and remaining limitations.
+GitHub and Space publication still require the user's explicit permission.
+
+### Review before publication — 5 October 2026
+
+The user explicitly authorized review and push. The existing Space
+`RJ8307/pramana-sih` reports requested hardware `zero-a10g` (ZeroGPU), with Gradio
+6.29.1 and Python 3.12. The CLI was signed out, so the authenticated Hub browser
+upload is used. The equivalent four-file archive package is 68 MB; all 214 asset
+files, source/build contents, seed checksum and 27 matching PDFs were verified.
+The archive contains no staged corpus, saved user content or credentials.
+
+Review fixed explicit inference mode in verifier worker threads and connection
+cleanup when queue submission fails. The complete 281 backend, 16 PostgreSQL and
+41 frontend checks passed again, as did Ruff, mypy, frontend lint/build and all
+three production browser checks using the archive entry point and real Ollama.
+Actual hosted GPU execution remains a separate deployment check.

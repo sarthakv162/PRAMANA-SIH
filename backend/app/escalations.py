@@ -12,10 +12,10 @@ import uuid
 from typing import Any
 
 import sqlalchemy as sa
-from app.core.sql_types import UUID
 from sqlalchemy.orm import Session
 
 from app.core.errors import ApiError
+from app.core.sql_types import UUID
 from app.schemas.misc import EscalationRequest, EscalationResponse
 
 _escalations_table = sa.Table(

@@ -1,0 +1,47 @@
+import { expect, test } from '@playwright/test';
+import { fileURLToPath } from 'node:url';
+
+test('production Space website queries through Gradio, resumes history and renders cited highlights', async ({ page }) => {
+  test.skip(process.env.RUN_SPACE_E2E !== '1', 'Requires the real isolated Gradio preview or deployed Space.');
+  test.setTimeout(180_000);
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await page.goto('/');
+  await expect(page.locator('.mode-chip')).toHaveText('Live API');
+  await page.locator('.history-panel summary').click();
+  await expect(page.getByText(/They reset when the server restarts/)).toBeVisible();
+  await expect(page.getByLabel('Demo workspace key')).toHaveCount(0);
+  await page.locator('.history-panel summary').click();
+  const health = await (await page.request.get('/v1/health')).json();
+  expect(health.query_transport).toBe('gradio');
+  expect(health.storage_mode).toBe('ephemeral');
+  expect(health.mock_mode).toBe(false);
+  const queue = page.waitForRequest((request) => request.url().includes('/gradio_api/queue/join'));
+  await page.locator('#query-input').fill('What does section 3(p) of the Patents Act say about traditional knowledge?');
+  await page.getByRole('button', { name: 'Ask PRAMANA', exact: true }).click();
+  await queue;
+  await expect(page.locator('.claim-card .claim-text').first()).toContainText(/traditional knowledge/i, { timeout: 120_000 });
+  await page.reload();
+  await expect(page.locator('.claim-card .claim-text').first()).toBeVisible();
+  const workers: string[] = [];
+  page.on('request', (request) => { if (request.url().includes('pdf.worker')) workers.push(request.url()); });
+  await page.getByRole('button', { name: /Open in source: The Patents Act, 1970/ }).first().click();
+  const canvas = page.locator('.pdf-viewer canvas');
+  await expect(canvas).toBeVisible();
+  await expect.poll(() => canvas.evaluate((node) => {
+    const c = node as HTMLCanvasElement;
+    const data = c.getContext('2d')?.getImageData(0, 0, c.width, c.height).data;
+    if (!data) return 0;
+    let pixels = 0;
+    for (let i = 0; i < data.length; i += 4) if (data[i] - data[i + 1] > 8 && data[i + 1] - data[i + 2] > 15) pixels++;
+    return pixels;
+  })).toBeGreaterThan(100);
+  expect(workers.some((url) => new URL(url).pathname.startsWith('/assets/'))).toBeTruthy();
+  await page.screenshot({ path: fileURLToPath(new URL('../../eval/results/screenshots/space-cited-pdf.png', import.meta.url)), animations: 'disabled' });
+  await page.getByRole('button', { name: 'Close' }).click();
+  const sidebar = await page.locator('.sidebar').boundingBox();
+  await page.locator('.main-content').evaluate((node) => { node.scrollTop = node.scrollHeight; });
+  expect((await page.locator('.sidebar').boundingBox())?.y).toBe(sidebar?.y);
+  await page.screenshot({ path: fileURLToPath(new URL('../../eval/results/screenshots/space-desktop.png', import.meta.url)), animations: 'disabled' });
+  expect(errors).toEqual([]);
+});

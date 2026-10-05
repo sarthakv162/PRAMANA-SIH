@@ -38,7 +38,8 @@ def _model_and_tokenizer() -> tuple[PreTrainedModel, PreTrainedTokenizerBase]:
         # the persistent cache, without unnecessary hub metadata requests.
         tokenizer = cast(Any, AutoTokenizer).from_pretrained(settings.nli_model)
         model = AutoModelForSequenceClassification.from_pretrained(settings.nli_model)
-    model.to("cpu")  # see retrieval/embed.py — accelerator contention on this machine
+    device = "cuda" if settings.inference_runtime == "transformers" else "cpu"
+    model.to(device)
     model.eval()
     torch.set_grad_enabled(False)
     return model, tokenizer
@@ -57,8 +58,11 @@ def entailment_score(premise: str, hypothesis: str) -> NliResult:
         # Discarding a tail can hide legal qualifications. A truncated premise must
         # never certify the full cited text. Keep its sources available for review.
         return NliResult(entailment=0.0, neutral=1.0, contradiction=0.0)
-    logits = model(**inputs).logits[0]
-    probs = torch.softmax(logits, dim=-1).tolist()
+    inputs = inputs.to(next(model.parameters()).device)
+    # Inference runs in worker threads; startup's grad mode is thread-local.
+    with torch.inference_mode():
+        logits = model(**inputs).logits[0]
+        probs = torch.softmax(logits, dim=-1).tolist()
 
     raw_id2label = model.config.id2label or {}
     id2label = {int(k): str(v).lower() for k, v in raw_id2label.items()}

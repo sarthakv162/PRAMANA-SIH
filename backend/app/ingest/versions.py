@@ -12,7 +12,7 @@ import sqlalchemy as sa
 from sqlalchemy.orm import Session
 
 from app.audit.merkle import merkle_root
-from app.config import get_settings
+from app.config import embedding_model_id
 from app.eval_runner import smoke_test_staged_version
 from app.retrieval.repo import all_chunks_ordered, corpus_versions
 
@@ -21,7 +21,7 @@ def create_staged_version(session: Session, label: str | None = None) -> str:
     label = label or f"{date.today().isoformat()}-{uuid.uuid4().hex[:6]}"
     row = session.execute(
         sa.insert(corpus_versions)
-        .values(id=uuid.uuid4(), label=label, status="staged", embedding_model=get_settings().embed_model)
+        .values(id=uuid.uuid4(), label=label, status="staged", embedding_model=embedding_model_id())
         .returning(corpus_versions.c.id)
     ).one()
     session.commit()

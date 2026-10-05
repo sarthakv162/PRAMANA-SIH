@@ -21,3 +21,6 @@ class HealthStatus(ContractModel):
     memory_budget_gb: int = 12
     speech_asr_available: bool = False
     public_demo_mode: bool = False
+    inference_runtime: str = "ollama"
+    storage_mode: str = "persistent"
+    query_transport: str = "sse"

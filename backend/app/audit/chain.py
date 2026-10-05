@@ -9,10 +9,11 @@ from dataclasses import dataclass
 from typing import Any
 
 import sqlalchemy as sa
-from app.core.sql_types import UUID
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Session
 
 from app.core.hashing import chain_entry_hash
+from app.core.sql_types import UUID
 
 GENESIS_HASH = "0" * 64
 
@@ -23,7 +24,7 @@ audit_log = sa.Table(
     sa.Column("request_id", UUID(as_uuid=True)),
     sa.Column("prev_hash", sa.Text),
     sa.Column("entry_hash", sa.Text),
-    sa.Column("payload", sa.JSON().with_variant(sa.dialects.postgresql.JSONB(), "postgresql")),
+    sa.Column("payload", sa.JSON().with_variant(JSONB(), "postgresql")),
     sa.Column("created_at", sa.DateTime(timezone=True)),
 )
 
@@ -49,7 +50,8 @@ def append_entry(session: Session, request_id: str, entry: dict[str, Any]) -> Ch
     else:
         # A file-backed SQLite writer lock also works across ZeroGPU worker processes.
         connection = session.connection()
-        if not connection.connection.driver_connection.in_transaction:
+        driver = connection.connection.driver_connection
+        if driver is not None and not driver.in_transaction:
             connection.exec_driver_sql("BEGIN IMMEDIATE")
     last = session.execute(sa.select(audit_log.c.entry_hash).order_by(audit_log.c.seq.desc()).limit(1)).first()
     prev_hash = last.entry_hash if last else GENESIS_HASH

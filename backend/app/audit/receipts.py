@@ -19,6 +19,7 @@ from sqlalchemy.orm import Session
 
 from app.audit.chain import append_entry, audit_log, verify_chain_segment
 from app.audit.merkle import merkle_proof, verify_proof
+from app.config import get_settings
 from app.core.hashing import canonical_json, sha256_hex
 from app.retrieval import repo
 from app.retrieval.evidence_pack import NumberedSpan
@@ -27,14 +28,19 @@ from app.schemas.receipts import ModelIds, Receipt, SpanVerification, VerifyResu
 
 
 def _receipt_id(seq: int) -> str:
+    settings = get_settings()
+    if settings.storage_mode == "ephemeral":
+        return f"rcp_{settings.receipt_namespace}_{seq}"
     return f"rcp_{seq}"
 
 
 def _seq_from_receipt_id(receipt_id: str) -> int | None:
-    if not receipt_id.startswith("rcp_"):
+    settings = get_settings()
+    prefix = f"rcp_{settings.receipt_namespace}_" if settings.storage_mode == "ephemeral" else "rcp_"
+    if not receipt_id.startswith(prefix):
         return None
     try:
-        return int(receipt_id[len("rcp_") :])
+        return int(receipt_id[len(prefix) :])
     except ValueError:
         return None
 
