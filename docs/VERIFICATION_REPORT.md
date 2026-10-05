@@ -204,3 +204,44 @@ cleanup when queue submission fails. The complete 281 backend, 16 PostgreSQL and
 41 frontend checks passed again, as did Ruff, mypy, frontend lint/build and all
 three production browser checks using the archive entry point and real Ollama.
 Actual hosted GPU execution remains a separate deployment check.
+
+### Hosted verification completed — 5 October 2026
+
+The Space is running on free ZeroGPU at
+https://huggingface.co/spaces/RJ8307/pramana-sih. HF revision
+`677a9cf61ed60f1457e8aa118637ed09ef35e534` uses the current backend source and the
+production frontend, with `mock_mode=false`. Qwen3 4B, Qwen3 Embedding 0.6B and
+mDeBERTa initialized on the actual hosted hardware. Retrieval uses the live
+keyword index; no failed staged corpus was promoted.
+
+The initial hosted query exposed LMFE's outdated Transformers import. The adapter
+now uses its framework-independent enforcer, with a real tokenizer/schema
+regression test that blocks invented verification fields. A Transformers downgrade
+was rejected because it conflicts with Gradio's Hub dependency. The deployed stack
+remains Transformers 5.18.0, Gradio 6.29.1 and Torch 2.13.0. Hosted development
+dependencies are declared and installed by CI. All 282 backend unit/contract tests,
+Ruff and mypy across 128 source files passed after the repair. OpenAPI was regenerated
+from the application, including the three missing health-field titles.
+
+An initial retry was correctly rejected by the free quota: HF normalized the
+120-second reservation to 180 seconds, while 177 remained. The reservation is now
+60 seconds and the request deadline 55 seconds. Quota failures remain visible errors.
+
+Actual question: “What does section 3(p) of the Patents Act say about traditional
+knowledge?” Request `f2c561dd-468e-425e-9b49-0ca2bb1aab5c` produced one verified claim,
+two citations and a receipt in 10,216 ms, with NLI entailment 0.869140625. Its chain
+and both Merkle proofs passed. The case reference, 3,008-byte PDF dossier and
+37,268-byte DOCX dossier were checked against the saved result. Reports and exports
+are kept locally under `eval/results` and `deploy/data/hosted-verification`.
+
+The hosted browser test then passed in 20.0 seconds: real queued GPU generation,
+reload/resume, bundled PDF worker, actual cited-page highlight, fixed sidebar and
+no page errors. The PDF check initially had a five-second local timeout; the remote
+download needed longer, so it now waits up to thirty seconds. Both hosted current-date
+checks also passed. Screenshots `space-hosted-{desktop,cited-pdf}.png` show the deployed
+website; `space-{desktop,cited-pdf}.png` retain the earlier local evidence.
+
+Remaining limits: free GPU quotas and cold starts, temporary history/reset on
+restart, one unavailable pinned Biological Diversity Act PDF, no approved Qwen dense
+index, and no measured cloud peak-memory result. Hosted Sarvam read-aloud requires
+the existing key entered in private Space Secrets; no credential was published.

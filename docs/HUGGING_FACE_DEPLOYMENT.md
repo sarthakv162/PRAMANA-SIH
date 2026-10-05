@@ -2,8 +2,10 @@
 
 The selected demo account is **RJ8307**. This deployment runs independently of the
 Mac and needs neither a hosted PostgreSQL service nor a paid persistent disk.
-The deployment bundle is prepared locally; it has not been uploaded or tested on
-actual ZeroGPU hardware yet.
+The demo is live at [RJ8307/pramana-sih](https://huggingface.co/spaces/RJ8307/pramana-sih).
+Actual ZeroGPU inference, citation verification, browser reload, receipt proofs,
+case references, dossier exports and the production PDF highlight were verified
+on 5 October 2026. Peak cloud memory has not been measured.
 
 ## Why there is still a small local store
 
@@ -55,6 +57,9 @@ constrains tokens with the original JSON Schema and validates the final output w
 Pydantic. Unsupported or truncated output cannot become verified synthesis. The
 model does not decide citation validity or verification status. NLI and the legal
 guards inspect the server's actual retrieved text. Reranking stays disabled.
+The token-enforcement adapter uses LMFE's framework-independent API because its
+older Transformers integration imports a class removed in Transformers 5.
+Tokenizer preprocessing happens once at startup, outside GPU reservations.
 
 The live snapshot currently records `legacy-bge-m3` embeddings. Those vectors are
 never compared with Qwen embeddings. Retrieval uses the real keyword index.
@@ -67,12 +72,17 @@ bundle; deployment does not bypass reviewer approval.
 [Current Hugging Face rules](https://huggingface.co/docs/hub/spaces-zerogpu) allow
 eligible free personal accounts to host up to two ZeroGPU Spaces. The account must
 have a verified email and be older than thirty days. RJ8307's public creation date
-is 3 December 2025; email verification still needs confirmation in the account.
+is 3 December 2025. The deployed Space reports active ZeroGPU hardware; the
+account has successfully obtained the free allocation.
 
 Choose **ZeroGPU**, not a paid dedicated GPU. Anonymous visitors have a two-minute
 daily GPU quota; signed-in free visitors have five minutes under the current
 published rules. Queueing, cold starts and exhausted quotas can interrupt judging.
-Actual latency and memory still need measurement on the deployed Space.
+The verified test answer took 10.2 seconds in the request pipeline, with one
+verified claim and two citations. This is one measurement, not a latency guarantee.
+Peak cloud memory remains unmeasured. The demo reserves 60 seconds per GPU call
+and has a 55-second request deadline. HF may normalize the reservation to a
+larger quota value; its displayed remaining quota is authoritative.
 
 ## 2. Build the real corpus and upload folder
 
@@ -152,6 +162,7 @@ to show **Running**, then complete the checks below before submitting it.
 Local unit/contract tests and production frontend build:
 
 ```bash
+python -m pip install -e 'backend[dev,hosted]'
 PYTHONPATH=backend .venv/bin/pytest backend/tests/unit backend/tests/contract -q
 PYTHONPATH=backend .venv/bin/ruff check backend/app
 cd frontend
@@ -202,7 +213,28 @@ On the deployed Space, check these with the real website:
 The isolated local check produced a verified section 3(p) answer, two supporting
 citations, a valid receipt and Merkle proofs, resumed saved result, connected case
 file, matching PDF downloads, and PDF/Word dossiers in about 9.5 seconds. It used
-Ollama through the Gradio queue; **actual ZeroGPU execution is still unverified**.
+Ollama through the Gradio queue.
+
+The hosted check subsequently produced one verified claim with two citations in
+10.2 seconds using actual Qwen3 4B on ZeroGPU. The chain and both Merkle proofs
+passed, the result survived reload, and the case-file and PDF/Word exports worked.
+The hosted production browser check passed, including the bundled PDF worker,
+cited-page highlight and fixed sidebar. Remote PDF loading needs more time than
+the local test; the browser check waits up to 30 seconds for its rendered highlight.
+The two hosted current-date checks also passed.
+
+To repeat the hosted browser check:
+
+```bash
+cd frontend
+RUN_SPACE_E2E=1 SPACE_SCREENSHOT_PREFIX=space-hosted \
+  PLAYWRIGHT_BASE_URL=https://rj8307-pramana-sih.hf.space \
+  npx playwright test e2e/space-demo.spec.ts e2e/fresh-date.spec.ts --workers=1
+```
+
+SARVAM speech needs the existing key entered into the Space's private Secrets.
+No key is included in the code or corpus bundle. A missing secret yields a clear
+speech-unavailable response. ASR remains unavailable in this implementation.
 
 ## Source updates and troubleshooting
 

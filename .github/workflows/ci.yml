@@ -20,7 +20,7 @@ jobs:
           python-version: "3.12"
 
       - name: Install backend
-        run: pip install -e ".[dev]"
+        run: pip install -e ".[dev,hosted]"
 
       - name: Lint (ruff)
         run: ruff check app

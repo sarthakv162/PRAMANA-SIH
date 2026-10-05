@@ -1734,12 +1734,15 @@ components:
           default: false
         inference_runtime:
           type: string
+          title: Inference Runtime
           default: ollama
         storage_mode:
           type: string
+          title: Storage Mode
           default: persistent
         query_transport:
           type: string
+          title: Query Transport
           default: sse
       additionalProperties: false
       type: object

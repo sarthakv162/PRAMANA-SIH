@@ -15,6 +15,7 @@ _answer: Any = None
 _answer_tokenizer: Any = None
 _embedding: Any = None
 _embedding_tokenizer: Any = None
+_schema_tokenizer_data: Any = None
 
 
 def initialize() -> None:
@@ -22,8 +23,12 @@ def initialize() -> None:
     import torch
     from transformers import AutoModel, AutoModelForCausalLM, AutoTokenizer
 
-    global _answer, _answer_tokenizer, _embedding, _embedding_tokenizer
+    from app.generation.schema_tokens import tokenizer_data
+
+    global _answer, _answer_tokenizer, _embedding, _embedding_tokenizer, _schema_tokenizer_data
     _answer_tokenizer = AutoTokenizer.from_pretrained(answer_model_id(), revision=ANSWER_REVISION)
+    # Preprocess once at startup, outside visitors' GPU allocations.
+    _schema_tokenizer_data = tokenizer_data(_answer_tokenizer)
     _answer = (
         cast(Any, AutoModelForCausalLM).from_pretrained(
             answer_model_id(),
@@ -52,7 +57,10 @@ def initialize() -> None:
 
 
 def ready() -> bool:
-    return all(item is not None for item in (_answer, _answer_tokenizer, _embedding, _embedding_tokenizer))
+    return all(
+        item is not None
+        for item in (_answer, _answer_tokenizer, _embedding, _embedding_tokenizer, _schema_tokenizer_data)
+    )
 
 
 class TransformersClient(LlmClient):
@@ -77,13 +85,9 @@ class TransformersClient(LlmClient):
             "pad_token_id": _answer_tokenizer.eos_token_id,
         }
         if schema is not None:
-            from lmformatenforcer import JsonSchemaParser
-            from lmformatenforcer.integrations.transformers import build_transformers_prefix_allowed_tokens_fn
+            from app.generation.schema_tokens import schema_prefix
 
-            options["prefix_allowed_tokens_fn"] = build_transformers_prefix_allowed_tokens_fn(
-                _answer_tokenizer,
-                JsonSchemaParser(schema),
-            )
+            options["prefix_allowed_tokens_fn"] = schema_prefix(_schema_tokenizer_data, schema)
         try:
             with INFERENCE_LOCK, torch.inference_mode():
                 output = _answer.generate(**inputs.to("cuda"), **options)[0][input_length:]

@@ -47,7 +47,7 @@ os.environ.update(
         "GRADIO_SSR_MODE": "false",
         "GRADIO_ANALYTICS_ENABLED": "false",
         "TOKENIZERS_PARALLELISM": "false",
-        "REQUEST_DEADLINE_S": "110",
+        "REQUEST_DEADLINE_S": "55",
     }
 )
 runtime = Path(tempfile.mkdtemp(prefix="pramana-space-"))
@@ -73,7 +73,8 @@ from app.main import _warm_live_models, lifespan
 # then lifespan reuses its cache. On ZeroGPU this also places it on emulated CUDA.
 _warm_live_models()
 
-gpu_query = spaces.GPU(duration=120)(query_events)
+# Keep the reservation below visitors' daily quota, including HF's duration factor.
+gpu_query = spaces.GPU(duration=60)(query_events)
 demo = create_server(ROOT / "frontend/dist", gpu_query)
 
 if __name__ == "__main__":

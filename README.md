@@ -636,7 +636,7 @@ npm --prefix frontend run types:generate
 
 PRAMANA uses the existing Dockerfiles and Compose stack: **PostgreSQL + backend + frontend + weekly source monitor**, with **native Ollama on the Mac**.
 
-For the selected free judging demo, use **Hugging Face ZeroGPU** under `RJ8307`. The [ZeroGPU deployment guide](docs/HUGGING_FACE_DEPLOYMENT.md) explains the upload bundle, eligibility, real corpus transfer and tests. This profile preserves the website and citation pipeline, runs the same Qwen model families through PyTorch on ZeroGPU, and uses temporary SQLite instead of hosted PostgreSQL or paid disk. History and receipts reset on server restart. The Mac defaults remain native Ollama and PostgreSQL. No public deployment has been completed yet.
+The free judging demo is live on **Hugging Face ZeroGPU** at [RJ8307/pramana-sih](https://huggingface.co/spaces/RJ8307/pramana-sih). The [ZeroGPU deployment guide](docs/HUGGING_FACE_DEPLOYMENT.md) explains the upload bundle, real corpus transfer, verified hosted checks and remaining limits. This profile preserves the website and citation pipeline, runs Qwen through PyTorch on ZeroGPU, and uses temporary SQLite instead of hosted PostgreSQL or paid disk. History and receipts reset on server restart. The Mac defaults remain native Ollama and PostgreSQL. Hosted Sarvam speech requires its private Space secret.
 
 ### 1. Prerequisites
 

@@ -11,6 +11,38 @@ from app.generation.llm import LlmError
 from app.retrieval.embed import EmbeddingUnavailable
 
 
+def test_real_schema_enforcement_allows_valid_claims_and_blocks_wrong_fields():
+    pytest.importorskip("lmformatenforcer")
+    import torch
+    from tokenizers import Tokenizer, decoders, models, pre_tokenizers, trainers
+    from transformers import PreTrainedTokenizerFast
+
+    from app.generation.schema_tokens import schema_prefix, tokenizer_data
+
+    backend = Tokenizer(models.BPE(unk_token="<unk>"))
+    backend.pre_tokenizer = pre_tokenizers.ByteLevel(add_prefix_space=False)
+    backend.decoder = decoders.ByteLevel()
+    backend.train_from_iterator(
+        ['{"claims":[{"statement":"Test statement","evidence_ids":["E1"]}],"gaps":[]}'],
+        trainers.BpeTrainer(vocab_size=256, initial_alphabet=pre_tokenizers.ByteLevel.alphabet(),
+                            special_tokens=["<eos>", "<unk>"]),
+    )
+    tokenizer = PreTrainedTokenizerFast(tokenizer_object=backend, eos_token="<eos>", unk_token="<unk>")
+    data = tokenizer_data(tokenizer)
+
+    def permitted(payload):
+        prefix = schema_prefix(data, GenerationResult.model_json_schema())
+        ids = tokenizer.encode("Prompt", add_special_tokens=False)
+        for token in tokenizer.encode(payload, add_special_tokens=False):
+            if token not in prefix(0, torch.tensor(ids)):
+                return False
+            ids.append(token)
+        return tokenizer.eos_token_id in prefix(0, torch.tensor(ids))
+
+    assert permitted('{"claims":[{"statement":"Test statement","evidence_ids":["E1"]}],"gaps":[]}')
+    assert not permitted('{"claims":[{"status":"verified"}],"gaps":[]}')
+
+
 def test_hosted_and_ollama_embedding_spaces_have_distinct_identity():
     hosted = Settings(INFERENCE_RUNTIME="transformers")
     local = Settings(INFERENCE_RUNTIME="ollama")

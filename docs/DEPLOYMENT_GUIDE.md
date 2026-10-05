@@ -1,6 +1,6 @@
 # PRAMANA: deployment options
 
-The selected free judging deployment is now **Hugging Face ZeroGPU**. Start with [the ZeroGPU guide](HUGGING_FACE_DEPLOYMENT.md): it preserves the website, uses real Qwen inference and citation verification, and needs neither managed PostgreSQL nor paid disk. Browser reload retains temporary history; server restart resets it. No public Space has been deployed yet.
+The selected free judging deployment is **Hugging Face ZeroGPU**, live at [RJ8307/pramana-sih](https://huggingface.co/spaces/RJ8307/pramana-sih). Start with [the ZeroGPU guide](HUGGING_FACE_DEPLOYMENT.md): actual Qwen inference, citation verification, history reload and production PDF highlights have passed. It needs neither managed PostgreSQL nor paid disk. Browser reload retains temporary history; server restart resets it.
 
 The remaining instructions document the earlier optional Oracle VM deployment. This VM approach runs the real app on a server, independently of your Mac. The demo is public: judges can query, resume shared history and use case files without entering a key. Ollama still runs the two specified Qwen models on the server; no cloud LLM or mock answer provider is introduced.
 

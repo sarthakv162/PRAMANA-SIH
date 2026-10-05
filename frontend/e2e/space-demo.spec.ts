@@ -20,6 +20,8 @@ test('production Space website queries through Gradio, resumes history and rende
   await page.locator('#query-input').fill('What does section 3(p) of the Patents Act say about traditional knowledge?');
   await page.getByRole('button', { name: 'Ask PRAMANA', exact: true }).click();
   await queue;
+  await expect(page.locator('.claim-card .claim-text').or(page.getByRole('alert')).first()).toBeVisible({ timeout: 120_000 });
+  if (await page.getByRole('alert').count()) throw new Error(await page.getByRole('alert').innerText());
   await expect(page.locator('.claim-card .claim-text').first()).toContainText(/traditional knowledge/i, { timeout: 120_000 });
   await page.reload();
   await expect(page.locator('.claim-card .claim-text').first()).toBeVisible();
@@ -35,13 +37,14 @@ test('production Space website queries through Gradio, resumes history and rende
     let pixels = 0;
     for (let i = 0; i < data.length; i += 4) if (data[i] - data[i + 1] > 8 && data[i + 1] - data[i + 2] > 15) pixels++;
     return pixels;
-  })).toBeGreaterThan(100);
+  }), { timeout: 30_000 }).toBeGreaterThan(100);
   expect(workers.some((url) => new URL(url).pathname.startsWith('/assets/'))).toBeTruthy();
-  await page.screenshot({ path: fileURLToPath(new URL('../../eval/results/screenshots/space-cited-pdf.png', import.meta.url)), animations: 'disabled' });
+  const prefix = process.env.SPACE_SCREENSHOT_PREFIX || 'space';
+  await page.screenshot({ path: fileURLToPath(new URL(`../../eval/results/screenshots/${prefix}-cited-pdf.png`, import.meta.url)), animations: 'disabled' });
   await page.getByRole('button', { name: 'Close' }).click();
   const sidebar = await page.locator('.sidebar').boundingBox();
   await page.locator('.main-content').evaluate((node) => { node.scrollTop = node.scrollHeight; });
   expect((await page.locator('.sidebar').boundingBox())?.y).toBe(sidebar?.y);
-  await page.screenshot({ path: fileURLToPath(new URL('../../eval/results/screenshots/space-desktop.png', import.meta.url)), animations: 'disabled' });
+  await page.screenshot({ path: fileURLToPath(new URL(`../../eval/results/screenshots/${prefix}-desktop.png`, import.meta.url)), animations: 'disabled' });
   expect(errors).toEqual([]);
 });

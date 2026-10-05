@@ -17,7 +17,7 @@ Build a citation-grounded Ayurveda IP and regulatory assistant for a 16 GB MacBo
 
 ## Hosted demo deployment
 
-The selected judging host is **Hugging Face ZeroGPU**, under `RJ8307`, with no managed database or paid persistent disk. Free hosting requires a verified personal account older than 30 days, and visitors have GPU quotas and queues. Account age is publicly confirmed; email verification and actual ZeroGPU allocation still need confirmation. No public deployment has been completed.
+The selected judging host is **Hugging Face ZeroGPU**, under `RJ8307`, with no managed database or paid persistent disk. The demo is deployed at `https://huggingface.co/spaces/RJ8307/pramana-sih`; actual GPU inference, verified citations, history reload, receipt proofs and production PDF highlights passed on 5 October 2026. Free hosting requires an eligible personal account; the Space has obtained the free allocation. Visitors have GPU quotas and queues, and peak cloud memory remains unmeasured.
 
 The Space runs the same React website and FastAPI routes through `gradio.Server`. Generation requests use the Gradio client and queue, then `@spaces.GPU`; a direct `/v1/query` call is rejected in this profile. The original graph performs retrieval, schema validation, citation checks, NLI verification, rendering and audit. Qwen3 4B and Qwen3 Embedding 0.6B use pinned Hugging Face weights in PyTorch; the NLI verifier also runs within the GPU allocation. JSON Schema token constraints plus Pydantic validation replace Ollama's structured-output transport. Greedy decoding, disabled thinking, the 8K context cap, disabled reranking and no remote text-inference API remain in force. The Mac profile still uses native Ollama and PostgreSQL by default.
 
