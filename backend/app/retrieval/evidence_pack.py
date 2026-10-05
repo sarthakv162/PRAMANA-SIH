@@ -10,6 +10,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 from typing import Any
+from urllib.parse import quote
 
 import sqlalchemy as sa
 from sqlalchemy.orm import Session
@@ -70,10 +71,12 @@ def build_evidence_pack(
     sections_by_id = {str(s.id): s for s in repo.fetch_sections_by_ids(session, section_ids)}
 
     document_ids = list({str(s.document_id) for s in sections_by_id.values()})
-    documents_by_id = {
-        str(d.id): d for d in (repo.fetch_document(session, doc_id) for doc_id in document_ids) if d
-    }
+    documents_by_id = {str(d.id): d for d in (repo.fetch_document(session, doc_id) for doc_id in document_ids) if d}
 
+    artifacts = {
+        d.short_key: repo.document_artifact(session, d.short_key, corpus_version_label)
+        for d in documents_by_id.values()
+    }
     numbered: list[NumberedSpan] = []
     for i, row in enumerate(chunk_rows, start=1):
         section = sections_by_id.get(str(row.section_id))
@@ -102,13 +105,15 @@ def build_evidence_pack(
             effective_from=row.effective_from,
             effective_to=row.effective_to,
             corpus_version=corpus_version_label,
-            source_url=document.source_url,
-            pdf_url=f"/v1/documents/{document.short_key}/pdf",
+            source_url=(
+                artifacts[document.short_key]["source_url"]
+                if artifacts.get(document.short_key)
+                else document.source_url
+            ),
+            pdf_url=f"/v1/documents/{document.short_key}/pdf?corpus_version={quote(corpus_version_label)}",
             highlights=highlights,
         )
-        numbered.append(
-            NumberedSpan(number=i, evidence_id=evidence_id, chunk_id=str(row.id), span=span)
-        )
+        numbered.append(NumberedSpan(number=i, evidence_id=evidence_id, chunk_id=str(row.id), span=span))
     return numbered
 
 
@@ -116,5 +121,8 @@ def render_prompt_spans(numbered: list[NumberedSpan]) -> str:
     """`[E1] <citation_label>\\n<text>` blocks, per §6.6 — what the LLM actually reads."""
     lines = []
     for item in numbered:
-        lines.append(f"[E{item.number}] {item.span.citation_label}\n{item.span.text}")
+        lines.append(
+            f"[E{item.number}] {item.span.citation_label} [{item.span.jurisdiction}]\n"
+            f"{' > '.join(item.span.section_path)}\n{item.span.text}"
+        )
     return "\n\n".join(lines)

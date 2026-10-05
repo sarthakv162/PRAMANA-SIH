@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { createPortal } from 'react-dom';
 import type { EvidenceSpan } from '../api/types';
 import { api } from '../api/client';
 
@@ -9,7 +10,10 @@ export function PageHeading({ eyebrow, title, description, action }: { eyebrow?:
 export function Panel({ children, className = '' }: { children: React.ReactNode; className?: string }) { return <section className={`panel ${className}`}>{children}</section>; }
 export function StateMessage({ error, onRetry, empty }: { error?: unknown; onRetry?: () => void; empty?: string }) {
   const { t } = useTranslation();
-  if (error) return <div className="state-message error-state" role="alert"><b>{error instanceof Error ? error.message : 'Something went wrong.'}</b>{onRetry && <button className="button button-secondary" onClick={onRetry}>{t('retry')}</button>}</div>;
+  if (error) {
+    const message = error instanceof Error ? error.message : typeof error === 'string' ? error : 'Something went wrong.';
+    return <div className="state-message error-state" role="alert"><b>{message}</b>{onRetry && <button className="button button-secondary" onClick={onRetry}>{t('retry')}</button>}</div>;
+  }
   return <div className="state-message">{empty ?? t('empty')}</div>;
 }
 export function Skeleton({ rows = 3 }: { rows?: number }) { return <div className="skeleton-stack" aria-label="Loading"><span className="sr-only">Loading</span>{Array.from({ length: rows }, (_, i) => <i key={i} />)}</div>; }
@@ -33,13 +37,15 @@ function PdfPane({ evidence }: { evidence: EvidenceSpan }) {
   useEffect(() => {
     let cancelled = false;
     let task: { destroy: () => void } | undefined;
+    let renderTask: { cancel: () => void } | undefined;
     const draw = async () => {
+      setMessage('');
       if (!evidence.highlights.length) { setMessage('No PDF highlight coordinates are available for this span.'); return; }
       try {
         const pdfjs = await import('pdfjs-dist');
         const workerUrl = (await import('pdfjs-dist/build/pdf.worker.min.mjs?url')).default;
         pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
-        task = pdfjs.getDocument({ url: api.pdfUrl(evidence.doc_id), httpHeaders: api.pdfHeaders(), rangeChunkSize: 65536 });
+        task = pdfjs.getDocument({ url: api.pdfUrl(evidence.doc_id, evidence.corpus_version), httpHeaders: api.pdfHeaders(), rangeChunkSize: 65536 });
         const pdf = await (task as unknown as { promise: Promise<import('pdfjs-dist/types/src/display/api').PDFDocumentProxy> }).promise;
         if (cancelled) return;
         const page = await pdf.getPage(evidence.page);
@@ -50,7 +56,9 @@ function PdfPane({ evidence }: { evidence: EvidenceSpan }) {
         canvas.width = viewport.width; canvas.height = viewport.height;
         const context = canvas.getContext('2d');
         if (!context) return;
-        await page.render({ canvasContext: context, viewport, canvas }).promise;
+        renderTask = page.render({ canvasContext: context, viewport, canvas });
+        await (renderTask as import('pdfjs-dist/types/src/display/api').RenderTask).promise;
+        if (cancelled) return;
         for (const highlight of evidence.highlights.filter((item) => item.page === evidence.page)) {
           context.fillStyle = 'rgba(233, 185, 73, .32)';
           for (const rect of highlight.rects) context.fillRect(rect[0] * scale, rect[1] * scale, (rect[2] - rect[0]) * scale, (rect[3] - rect[1]) * scale);
@@ -58,7 +66,7 @@ function PdfPane({ evidence }: { evidence: EvidenceSpan }) {
       } catch (error) { if (!cancelled) setMessage(error instanceof Error ? error.message : 'Unable to load this source PDF.'); }
     };
     void draw();
-    return () => { cancelled = true; task?.destroy(); };
+    return () => { cancelled = true; renderTask?.cancel(); task?.destroy(); };
   }, [evidence]);
   return <div className="pdf-viewer"><canvas ref={canvasRef} aria-label={`Source document page ${evidence.page}`} />{message && <p>{message}</p>}</div>;
 }
@@ -69,7 +77,7 @@ export function EvidenceDrawer({ evidence, onClose, onNavigate }: { evidence: Ev
   useEffect(() => { if (!evidence) return; const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape') onClose(); }; window.addEventListener('keydown', onKey); return () => window.removeEventListener('keydown', onKey); }, [evidence, onClose]);
   if (!evidence) return null;
   const copy = async () => { await navigator.clipboard?.writeText(evidence.sha256); setCopied(true); window.setTimeout(() => setCopied(false), 1600); };
-  return <div className="drawer-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
+  return createPortal(<div className="drawer-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
     <aside className="source-drawer" role="dialog" aria-modal="true" aria-labelledby="source-title">
       <header className="drawer-header"><div><span className="eyebrow">{t('evidence')}</span><h2 id="source-title">{evidence.doc_title}</h2></div><button className="icon-button" aria-label={t('close')} onClick={onClose}>×</button></header>
       <div className="drawer-meta"><b>{evidence.citation_label}</b><span>{evidence.jurisdiction} · {t('page')} {evidence.page}</span><span>{t('effective')}: {evidence.effective_from}{evidence.effective_to ? ` — ${evidence.effective_to}` : ''}</span><span>{t('version')}: {evidence.corpus_version}</span><span>{t('hash')}: <code>{evidence.sha256}</code> <button className="text-button" onClick={() => void copy()}>{copied ? 'Copied' : t('copyHash')}</button></span></div>
@@ -77,7 +85,7 @@ export function EvidenceDrawer({ evidence, onClose, onNavigate }: { evidence: Ev
       <EvidenceQuote evidence={evidence} />
       <footer className="drawer-footer">{onNavigate && <div className="row"><button className="button button-secondary" onClick={() => onNavigate(-1)}>← Previous</button><button className="button button-secondary" onClick={() => onNavigate(1)}>Next →</button></div>}<a className="button button-primary" href={evidence.source_url} target="_blank" rel="noreferrer">{t('openSource')} ↗</a></footer>
     </aside>
-  </div>;
+  </div>, document.body);
 }
 
 export function LoadingBlock({ label }: { label?: string }) { const { t } = useTranslation(); return <div className="loading-block" role="status"><span className="spinner" />{label ?? t('loading')}</div>; }

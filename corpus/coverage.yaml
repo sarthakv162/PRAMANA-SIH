@@ -1,0 +1,48 @@
+# Required subject coverage. Status is calculated from the selected live corpus, never asserted here.
+# Explicit instrument names constrain retrieval; these are identifiers, never answer text.
+instruments:
+  - {aliases: [Patents Act], sources: [patents_act_1970]}
+  - {aliases: [Patents Rules], sources: [patents_rules_2003_consolidated_2021]}
+  - {aliases: [Drugs and Cosmetics Act, Drugs Cosmetics Act], sources: [drugs_cosmetics_act_1940]}
+  - {aliases: [Drugs Rules], sources: [drugs_rules_1945_consolidated_2024]}
+  - {aliases: [New Drugs and Clinical Trials Rules], sources: [new_drugs_clinical_trials_rules_2019]}
+  - {aliases: [Cosmetics Rules], sources: [cosmetics_rules_2020]}
+  - {aliases: [Biological Diversity Act, Biodiversity Act], sources: [biological_diversity_act_2002]}
+  - {aliases: [Biological Diversity Rules], sources: [biological_diversity_rules_2024]}
+  - {aliases: [Trade Marks Act, Trademarks Act], sources: [trade_marks_act_1999]}
+  - {aliases: [Trade Marks Rules, Trademarks Rules], sources: [trade_marks_rules_2017]}
+  - {aliases: [Geographical Indications Act], sources: [geographical_indications_act_1999]}
+  - {aliases: [Designs Act], sources: [designs_act_2000]}
+  - {aliases: [Copyright Act], sources: [copyright_act_1957]}
+  - {aliases: [PPVFR Act, Protection of Plant Varieties and Farmers Rights Act], sources: [ppvfr_act_2001]}
+  - {aliases: [TRIPS, TRIPS Agreement], sources: [trips_agreement]}
+  - {aliases: [Convention on Biological Diversity], sources: [convention_on_biological_diversity]}
+  - {aliases: [Nagoya Protocol], sources: [nagoya_protocol]}
+  - {aliases: [WIPO Treaty on Intellectual Property Genetic Resources and Associated Traditional Knowledge, WIPO GRTK Treaty, WIPO GRATK Treaty], sources: [wipo_grtk_treaty_2024]}
+  - {aliases: [Patent Cooperation Treaty, PCT], sources: [pct_treaty]}
+  - {aliases: [Madrid Protocol], sources: [madrid_protocol]}
+  - {aliases: [Hague Agreement], sources: [hague_agreement]}
+  - {aliases: [Budapest Treaty], sources: [budapest_treaty]}
+topics:
+  - {id: patents, title: Indian patents and exclusions, jurisdiction: IN, sources: [patents_act_1970, patents_rules_2003_consolidated_2021, patents_rules_amendment_2024_03_15], official_urls: ['https://ipindia.gov.in/patents.htm']}
+  - {id: ayush_drugs, title: ASU classification and manufacturing, jurisdiction: IN, sources: [drugs_cosmetics_act_1940, drugs_rules_1945_consolidated_2024], official_urls: ['https://ayush.gov.in/']}
+  - {id: phytopharma, title: Phytopharmaceuticals and clinical trials, jurisdiction: IN, sources: [new_drugs_clinical_trials_rules_2019, drugs_rules_1945_consolidated_2024], official_urls: ['https://cdsco.gov.in/opencms/opencms/en/Drugs/New-Drugs/']}
+  - {id: food, title: Ayurveda Aahara and nutraceuticals, jurisdiction: IN, sources: [fssai_ayurveda_aahara_regulations_2022, fssai_ayurveda_aahara_category_a_2025], official_urls: ['https://www.fssai.gov.in/']}
+  - {id: cosmetics, title: Cosmetics regulation, jurisdiction: IN, sources: [cosmetics_rules_2020], official_urls: ['https://cdsco.gov.in/opencms/opencms/en/Cosmetics/cosmetics/']}
+  - {id: abs, title: Biodiversity and access and benefit sharing, jurisdiction: IN, sources: [biological_diversity_act_2002, biological_diversity_rules_2024, biological_diversity_abs_regulations_2025], official_urls: ['https://www.nbaindia.nic.in/']}
+  - {id: trademarks, title: Trade marks, jurisdiction: IN, sources: [trade_marks_act_1999, trade_marks_rules_2017], official_urls: ['https://ipindia.gov.in/trade-marks.htm']}
+  - {id: gi, title: Geographical indications, jurisdiction: IN, sources: [geographical_indications_act_1999, geographical_indications_rules_2002], official_urls: ['https://ipindia.gov.in/gi.htm']}
+  - {id: designs, title: Industrial designs, jurisdiction: IN, sources: [designs_act_2000], official_urls: ['https://ipindia.gov.in/designs.htm']}
+  - {id: copyright, title: Copyright, jurisdiction: IN, sources: [copyright_act_1957], official_urls: ['https://copyright.gov.in/']}
+  - {id: ppvfr, title: Plant variety protection, jurisdiction: IN, sources: [ppvfr_act_2001], official_urls: ['https://plantauthority.gov.in/']}
+  - {id: secrets, title: Trade secrets and confidential know-how, jurisdiction: IN, sources: [], official_urls: ['https://www.indiacode.nic.in/'], note: 'No single comprehensive trade-secret statute asserted; authoritative case coverage needs review.'}
+  - {id: advertising, title: Therapeutic advertising and labels, jurisdiction: IN, sources: [drugs_magic_remedies_act_1954, drugs_rules_1945_consolidated_2024], official_urls: ['https://www.indiacode.nic.in/']}
+  - {id: trips, title: WTO TRIPS, jurisdiction: INTL, sources: [trips_agreement], official_urls: ['https://www.wto.org/english/tratop_e/trips_e/trips_e.htm']}
+  - {id: cbd, title: Convention on Biological Diversity, jurisdiction: INTL, sources: [convention_on_biological_diversity], official_urls: ['https://www.cbd.int/convention/']}
+  - {id: nagoya, title: Nagoya Protocol, jurisdiction: INTL, sources: [nagoya_protocol], official_urls: ['https://www.cbd.int/abs/']}
+  - {id: wipo_grtk, title: WIPO genetic resources and associated traditional knowledge treaty, jurisdiction: INTL, sources: [wipo_grtk_treaty_2024], official_urls: ['https://www.wipo.int/en/web/treaties/ip/gratk']}
+  - {id: pct, title: Patent Cooperation Treaty, jurisdiction: INTL, sources: [pct_treaty], official_urls: ['https://www.wipo.int/en/web/pct-system/texts']}
+  - {id: madrid, title: Madrid trade mark system, jurisdiction: INTL, sources: [madrid_protocol], official_urls: ['https://www.wipo.int/en/web/madrid-system']}
+  - {id: hague, title: Hague designs system, jurisdiction: INTL, sources: [hague_agreement], official_urls: ['https://www.wipo.int/en/web/hague-system']}
+  - {id: budapest, title: Budapest Treaty, jurisdiction: INTL, sources: [budapest_treaty], official_urls: ['https://www.wipo.int/en/web/treaties/registration/budapest']}
+  - {id: tkdl, title: TKDL prior-art search, jurisdiction: IN, sources: [], official_urls: ['https://www.tkdl.res.in/'], note: 'Query pack only. No authorized TKDL database access is configured.'}

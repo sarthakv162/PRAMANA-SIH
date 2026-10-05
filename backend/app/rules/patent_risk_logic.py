@@ -68,9 +68,7 @@ def build_patent_risk(
     overall_score = min(1.0, sum(result.score_by_section.values()))
     gauge = Risk(gauge_from_score(overall_score, tree["outputs"]["thresholds"]))
     outcome_id = "n_outcome"
-    nodes.append(
-        DecisionNode(id=outcome_id, kind="outcome", label=f"Overall patent risk: {gauge}", value=None)
-    )
+    nodes.append(DecisionNode(id=outcome_id, kind="outcome", label=f"Overall patent risk: {gauge}", value=None))
     if prev_node_id:
         edges.append(DecisionEdge(**{"from": prev_node_id, "to": outcome_id, "label": gauge}))
 

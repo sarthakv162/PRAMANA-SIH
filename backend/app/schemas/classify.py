@@ -1,5 +1,6 @@
 """Classification wizard objects. See §5.2, §5.6. `/classify` is stateless (§6.8)."""
 
+from datetime import date
 from typing import Literal
 
 from pydantic import Field
@@ -15,9 +16,18 @@ class InputOption(ContractModel):
     label: str
 
 
+class QuestionField(ContractModel):
+    id: str
+    label: str
+    kind: InputKind
+    options: list[InputOption] = Field(default_factory=list)
+    required: bool = True
+
+
 class QuestionInput(ContractModel):
     kind: InputKind
     options: list[InputOption] = Field(default_factory=list)
+    fields: list[QuestionField] = Field(default_factory=list)
 
 
 class Progress(ContractModel):
@@ -64,12 +74,15 @@ class AbsPosture(ContractModel):
 class ClassifyRequest(ContractModel):
     answers: dict[str, str] = Field(default_factory=dict)
     jurisdiction: Jurisdiction = Jurisdiction.BOTH
-    as_of: str | None = None
+    as_of: date | None = None
     language: Language = Language.AUTO
 
 
 class ClassifyResult(ContractModel):
     type: Literal["result"] = "result"
+    status: Literal["provisional", "draft"] = "provisional"
+    review_recommended: bool = True
+    missing_information: list[str] = Field(default_factory=list)
     category: ClassifyCategory
     category_label: str
     requirements: list[Requirement]

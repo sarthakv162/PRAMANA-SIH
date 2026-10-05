@@ -11,7 +11,11 @@ from typing import Any
 import sqlalchemy as sa
 from sqlalchemy.orm import Session
 
-from app.retrieval import repo, rrf
+from app.orchestrator.nodes import retrieve
+from app.orchestrator.router import route
+from app.orchestrator.state import RequestState
+from app.retrieval import repo
+from app.schemas.query import QueryRequest
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 GOLDEN_PATH = PROJECT_ROOT / "eval" / "golden" / "golden.jsonl"
@@ -36,30 +40,31 @@ def evaluate_version(session: Session, corpus_version_id: str, label: str) -> di
     for item in golden:
         as_of = datetime.fromisoformat(item["as_of"]).date()
         jurisdictions = [item["jurisdiction"]] if item["jurisdiction"] != "BOTH" else ["IN", "INTL"]
-        candidates = rrf.hybrid_retrieve(
-            session,
-            corpus_version_id,
-            jurisdictions,
-            as_of,
-            item["question"],
-            top_n_per_jurisdiction=5,
+        intent, direct_key = route(item["question"])
+        state = RequestState(
+            request_id="evaluation",
+            raw_query="",
+            request=QueryRequest(query=item["question"]),
+            corpus_version_id=corpus_version_id,
+            corpus_version_label=label,
+            query_en=item["question"],
+            jurisdictions=jurisdictions,
+            as_of=as_of,
+            intent=intent,
+            direct_section_key=direct_key,
         )
+        rows = [] if intent in {"out_of_scope", "legal_advice", "dossier"} else retrieve.run(session, state)
         retrieved_keys: set[str] = set()
-        for candidate in candidates:
-            rows = repo.fetch_chunks_by_ids(
-                session, [candidate.chunk_id], corpus_version_id, jurisdictions, as_of
-            )
-            for row in rows:
-                if row.jurisdiction not in jurisdictions:
-                    jurisdiction_leaks += 1
-                sections = repo.fetch_sections_by_ids(session, [str(row.section_id)])
-                retrieved_keys.update(section.section_key for section in sections)
+        for row in rows:
+            if row.jurisdiction not in jurisdictions:
+                jurisdiction_leaks += 1
+            sections = repo.fetch_sections_by_ids(session, [str(row.section_id)])
+            retrieved_keys.update(section.section_key for section in sections)
 
         gold_keys = set(item["gold_evidence_keys"])
         if item["should_abstain"]:
             abstain_total += 1
-            margin = rrf.top1_top2_margin(candidates)
-            if not candidates or margin < 0.05:
+            if not rows:
                 abstain_correct += 1
         elif gold_keys:
             gold_total += len(gold_keys)
@@ -73,9 +78,12 @@ def evaluate_version(session: Session, corpus_version_id: str, label: str) -> di
         "run_id": f"eval_{uuid.uuid4().hex[:16]}",
         "corpus_version": label,
         "n_questions": len(golden),
+        "method": (
+            "Actual production routing and retrieval nodes against the pinned version; generation is not evaluated."
+        ),
         "conditions": [
             {
-                "name": "PRAMANA retrieval — retrieval-stage only",
+                "name": "PRAMANA production routing + retrieval + legal graph; synthesis not measured",
                 "citation_precision": round(precision, 2),
                 "citation_recall": round(recall, 2),
                 "faithfulness": None,
@@ -112,9 +120,7 @@ def smoke_test_staged_version(session: Session, label: str) -> dict[str, Any]:
     from app.retrieval.repo import corpus_versions
 
     version = session.execute(
-        sa.select(corpus_versions.c.id, corpus_versions.c.status).where(
-            corpus_versions.c.label == label
-        )
+        sa.select(corpus_versions.c.id, corpus_versions.c.status).where(corpus_versions.c.label == label)
     ).first()
     if version is None:
         raise ValueError(f"no corpus_version with label {label!r}")

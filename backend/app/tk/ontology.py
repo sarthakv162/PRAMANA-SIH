@@ -62,9 +62,7 @@ def normalize_ingredient(name: str) -> list[NormalizeMatch]:
 
     scored: list[NormalizeMatch] = []
     for plant in plants:
-        best = max(
-            difflib.SequenceMatcher(None, needle, n.lower()).ratio() for n in _all_names(plant)
-        )
+        best = max(difflib.SequenceMatcher(None, needle, n.lower()).ratio() for n in _all_names(plant))
         if best >= 0.6:
             scored.append(NormalizeMatch(entry=plant, confidence=round(best, 2)))
     return sorted(scored, key=lambda m: m.confidence, reverse=True)[:3]

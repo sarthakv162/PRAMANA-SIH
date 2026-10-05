@@ -2,11 +2,12 @@
 
 from functools import lru_cache
 from pathlib import Path
+from typing import Literal
 
-from pydantic import Field
+from pydantic import Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-_PROJECT_ROOT = Path(__file__).resolve().parents[2]
+_PROJECT_ROOT = Path(__file__).resolve().parents[3]
 
 
 class Settings(BaseSettings):
@@ -21,16 +22,44 @@ class Settings(BaseSettings):
     app_db_password: str = Field(default="", alias="APP_DB_PASSWORD")
     ingest_db_password: str = Field(default="", alias="INGEST_DB_PASSWORD")
 
-    llm_provider: str = Field(default="groq", alias="LLM_PROVIDER")
-    llm_model: str = Field(default="openai/gpt-oss-120b", alias="LLM_MODEL")
-    groq_api_key: str = Field(default="", alias="GROQ_API_KEY")
-    llm_api_key: str = Field(default="", alias="LLM_API_KEY")
+    llm_model: Literal["qwen3:4b"] = Field(default="qwen3:4b", alias="LLM_MODEL")
+    ollama_base_url: str = Field(default="http://127.0.0.1:11434", alias="OLLAMA_BASE_URL")
+    ollama_context_tokens: int = Field(default=8192, ge=1024, le=8192, alias="OLLAMA_CONTEXT_TOKENS")
+    ollama_keep_alive: str = Field(default="5m", alias="OLLAMA_KEEP_ALIVE")
+    ollama_num_threads: int | None = Field(default=None, ge=1, le=64, alias="OLLAMA_NUM_THREADS")
+    memory_budget_gb: int = Field(default=12, ge=12, le=12, alias="MEMORY_BUDGET_GB")
+    workspace_id: str = Field(default="shared-demo", alias="WORKSPACE_ID")
+    history_retention_days: int = Field(default=30, ge=30, le=30, alias="HISTORY_RETENTION_DAYS")
 
-    embedder: str = Field(default="local", alias="EMBEDDER")
-    embed_model: str = Field(default="BAAI/bge-m3", alias="EMBED_MODEL")
+    @field_validator("ollama_base_url")
+    @classmethod
+    def local_ollama_only(cls, value: str) -> str:
+        from urllib.parse import urlparse
 
-    rerank: bool = Field(default=False, alias="RERANK")
+        parsed = urlparse(value)
+        if (
+            parsed.scheme != "http"
+            or parsed.hostname not in {"127.0.0.1", "localhost", "::1", "host.docker.internal", "ollama"}
+            or (parsed.hostname == "ollama" and (parsed.port != 11434 or parsed.path not in {"", "/"}))
+            or parsed.username
+            or parsed.password
+            or parsed.query
+            or parsed.fragment
+        ):
+            raise ValueError("OLLAMA_BASE_URL must point to local Ollama or the same-server ollama:11434 service")
+        return value.rstrip("/")
+
+    embed_model: Literal["qwen3-embedding:0.6b"] = Field(default="qwen3-embedding:0.6b", alias="EMBED_MODEL")
+
+    rerank: Literal[False] = Field(default=False, alias="RERANK")
     rerank_skip_margin: float = Field(default=0.15, alias="RERANK_SKIP_MARGIN")
+
+    @field_validator("rerank", mode="before")
+    @classmethod
+    def disabled_reranker(cls, value: object) -> bool:
+        if value is False or value in ("0", "false", "False", "off"):
+            return False
+        raise ValueError("Reranking is disabled in the 12 GB local model budget")
 
     nli_model: str = Field(
         default="MoritzLaurer/mDeBERTa-v3-base-xnli-multilingual-nli-2mil7",
@@ -45,26 +74,26 @@ class Settings(BaseSettings):
     # Confidence score weights (§6.7): retrieval margin, mean NLI entailment, verified-claim
     # ratio, back-translation health. Must sum to 1.0; picked as an even split until the
     # dev-set risk-coverage curve (§9) tunes them.
-    confidence_w_retrieval_margin: float = Field(
-        default=0.25, alias="CONFIDENCE_W_RETRIEVAL_MARGIN"
-    )
+    confidence_w_retrieval_margin: float = Field(default=0.25, alias="CONFIDENCE_W_RETRIEVAL_MARGIN")
     confidence_w_mean_entail: float = Field(default=0.25, alias="CONFIDENCE_W_MEAN_ENTAIL")
     confidence_w_verified_ratio: float = Field(default=0.25, alias="CONFIDENCE_W_VERIFIED_RATIO")
-    confidence_w_back_translation: float = Field(
-        default=0.25, alias="CONFIDENCE_W_BACK_TRANSLATION"
-    )
+    confidence_w_back_translation: float = Field(default=0.25, alias="CONFIDENCE_W_BACK_TRANSLATION")
 
-    bhashini_user_id: str = Field(default="", alias="BHASHINI_USER_ID")
-    bhashini_api_key: str = Field(default="", alias="BHASHINI_API_KEY")
-    bhashini_pipeline_id: str = Field(default="", alias="BHASHINI_PIPELINE_ID")
-    translate_provider: str = Field(default="llm", alias="TRANSLATE_PROVIDER")
+    translate_provider: Literal["llm"] = Field(default="llm", alias="TRANSLATE_PROVIDER")
 
-    request_deadline_s: float = Field(default=45.0, alias="REQUEST_DEADLINE_S")
+    # User-requested cloud speech exception. Text generation/translation remain local.
+    sarvam_api_key: SecretStr = Field(default=SecretStr(""), alias="SARVAM_API_KEY")
+    sarvam_tts_model: Literal["bulbul:v3"] = Field(default="bulbul:v3", alias="SARVAM_TTS_MODEL")
+    sarvam_tts_speaker: str = Field(default="shubh", pattern=r"^[a-z]+$", alias="SARVAM_TTS_SPEAKER")
+    sarvam_tts_timeout_s: float = Field(default=60.0, gt=0, le=120, alias="SARVAM_TTS_TIMEOUT_S")
+
+    request_deadline_s: float = Field(default=180.0, alias="REQUEST_DEADLINE_S")
 
     rate_limit_requests: int = Field(default=120, alias="RATE_LIMIT_REQUESTS")
     rate_limit_window_s: int = Field(default=60, alias="RATE_LIMIT_WINDOW_S")
 
-    mock_mode: bool = Field(default=True, alias="MOCK_MODE")
+    mock_mode: bool = Field(default=False, alias="MOCK_MODE")
+    public_demo_mode: bool = Field(default=False, alias="PUBLIC_DEMO_MODE")
     demo_key: str = Field(default="", alias="DEMO_KEY")
 
     fixtures_dir: str = Field(default="../contracts/fixtures", alias="FIXTURES_DIR")

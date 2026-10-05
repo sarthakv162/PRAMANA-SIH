@@ -60,9 +60,7 @@ def canonicalize_ingredients(raw_names: list[str]) -> set[str]:
     return canonical
 
 
-def match_formulations(
-    ingredient_names: list[str], indication: str | None = None, top_n: int = 8
-) -> list[MatchResult]:
+def match_formulations(ingredient_names: list[str], indication: str | None = None, top_n: int = 8) -> list[MatchResult]:
     input_set = canonicalize_ingredients(ingredient_names)
     results: list[MatchResult] = []
 
@@ -73,9 +71,7 @@ def match_formulations(
         intersection = input_set & formulation_set
         union = input_set | formulation_set
         similarity = len(intersection) / len(union) if union else 0.0
-        indication_match = bool(
-            indication and any(indication.lower() in i.lower() for i in formulation.indications)
-        )
+        indication_match = bool(indication and any(indication.lower() in i.lower() for i in formulation.indications))
         if indication_match:
             similarity = min(1.0, similarity + 0.15)  # indication overlap boost (§6.10)
 

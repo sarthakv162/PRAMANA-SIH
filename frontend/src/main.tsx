@@ -15,6 +15,7 @@ import './styles.css';
 import { AppShell } from './components/shell';
 import { LoadingBlock } from './components/ui';
 import { useAppStore } from './state/store';
+import { api, setPublicDemo } from './api/client';
 
 const AskPage = React.lazy(() => import('./pages/ask').then((module) => ({ default: module.AskPage })));
 const ClassificationPage = React.lazy(() => import('./pages/classification').then((module) => ({ default: module.ClassificationPage })));
@@ -29,13 +30,19 @@ const AdminPage = React.lazy(() => import('./pages/admin').then((module) => ({ d
 const ComponentsPage = React.lazy(() => import('./pages/components-gallery').then((module) => ({ default: module.ComponentsPage })));
 
 const queryClient = new QueryClient({ defaultOptions: { queries: { staleTime: 30_000, retry: 1, refetchOnWindowFocus: false } } });
-const mode = import.meta.env.VITE_API_MODE ?? 'mock';
+const mode = import.meta.env.VITE_API_MODE ?? 'live';
 
 async function bootstrap() {
   if (mode === 'mock') {
     const { worker } = await import('./mocks/browser');
     await worker.start({ onUnhandledRequest: 'bypass', serviceWorker: { url: '/mockServiceWorker.js' } });
   }
+  // The server owns demo access policy; no key or deployment secret is bundled in JS.
+  try {
+    const health = await api.health();
+    setPublicDemo(health.public_demo_mode === true);
+    queryClient.setQueryData(['health'], health);
+  } catch { /* Pages show API availability errors and remain usable for retry. */ }
   const { uiLanguage, theme } = useAppStore.getState();
   document.documentElement.lang = uiLanguage;
   document.documentElement.dataset.theme = theme;

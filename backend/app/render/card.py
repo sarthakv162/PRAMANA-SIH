@@ -9,6 +9,7 @@ from pathlib import Path
 
 import yaml
 
+from app.intake.translate import translate_from_english
 from app.orchestrator.state import RequestState
 from app.schemas.answer import (
     AnswerCard,
@@ -36,6 +37,11 @@ def build_refusal(
     receipt_id: str,
 ) -> RefusalCard:
     nearest = [item.span for item in state.evidence_pack[:3]]
+    if state.lang != Language.EN and reason != RefusalReason.GENERATION_UNAVAILABLE:
+        message = translate_from_english(message, state.lang)
+        disclaimer = translate_from_english(DISCLAIMER, state.lang)
+    else:
+        disclaimer = DISCLAIMER
     return RefusalCard(
         request_id=state.request_id,
         reason=reason,
@@ -50,7 +56,7 @@ def build_refusal(
             ),
         ),
         receipt_id=receipt_id,
-        disclaimer=DISCLAIMER,
+        disclaimer=disclaimer,
     )
 
 
@@ -91,7 +97,10 @@ def _suggested_followups(state: RequestState) -> list[str]:
         "abs": "Do I have any access and benefit sharing obligations here?",
         "tk": "Does this match a known classical formulation?",
     }
-    return [text for intent, text in templates.items() if intent != state.intent][:3]
+    followups = [text for intent, text in templates.items() if intent != state.intent][:3]
+    if state.lang != Language.EN:
+        followups = [translate_from_english(text, state.lang) for text in followups]
+    return followups
 
 
 def build_answer(
@@ -122,6 +131,7 @@ def build_answer(
         for j in state.jurisdictions
     ]
 
+    disclaimer = translate_from_english(DISCLAIMER, state.lang) if state.lang != Language.EN else DISCLAIMER
     return AnswerCard(
         request_id=state.request_id,
         corpus_version=state.corpus_version_label,
@@ -141,6 +151,6 @@ def build_answer(
         ),
         suggested_followups=_suggested_followups(state),
         receipt_id=receipt_id,
-        disclaimer=DISCLAIMER,
+        disclaimer=disclaimer,
         timings_ms=timings_ms,
     )

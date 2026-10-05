@@ -36,29 +36,17 @@ def _request_id(request: Request) -> str:
 def register_error_handlers(app: FastAPI) -> None:
     @app.exception_handler(ApiError)
     async def _api_error_handler(request: Request, exc: ApiError) -> JSONResponse:
-        body = ErrorBody(
-            error=ErrorDetail(code=exc.code, message=exc.message, request_id=_request_id(request))
-        )
+        body = ErrorBody(error=ErrorDetail(code=exc.code, message=exc.message, request_id=_request_id(request)))
         return JSONResponse(status_code=exc.status_code, content=body.model_dump(mode="json"))
 
     @app.exception_handler(RequestValidationError)
-    async def _validation_error_handler(
-        request: Request, exc: RequestValidationError
-    ) -> JSONResponse:
+    async def _validation_error_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
         body = ErrorBody(
-            error=ErrorDetail(
-                code="validation_error", message=str(exc.errors()), request_id=_request_id(request)
-            )
+            error=ErrorDetail(code="validation_error", message=str(exc.errors()), request_id=_request_id(request))
         )
         return JSONResponse(status_code=422, content=body.model_dump(mode="json"))
 
     @app.exception_handler(StarletteHTTPException)
-    async def _http_error_handler(
-        request: Request, exc: StarletteHTTPException
-    ) -> JSONResponse:
-        body = ErrorBody(
-            error=ErrorDetail(
-                code="http_error", message=str(exc.detail), request_id=_request_id(request)
-            )
-        )
+    async def _http_error_handler(request: Request, exc: StarletteHTTPException) -> JSONResponse:
+        body = ErrorBody(error=ErrorDetail(code="http_error", message=str(exc.detail), request_id=_request_id(request)))
         return JSONResponse(status_code=exc.status_code, content=body.model_dump(mode="json"))

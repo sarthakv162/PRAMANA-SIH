@@ -3,34 +3,384 @@ sources:
   title: The Patents Act, 1970
   jurisdiction: IN
   doc_type: statute
-  issuer: Government of India
+  issuer: Government of India — CGPDTM / IP India
   tier: A
   language: en
   url: https://ipindia.gov.in/frontend/pdf/patents/1_113_1_The_Patents_Act__1970___incorporating_all_amendments_till_1-08-2024.pdf
-  source_note: 'Consolidated text as amended, published by the Office of the Controller
-    General of Patents, Designs & Trade Marks (ipindia.gov.in) — the same authority
-    that administers the Act. Retrieved 2026-09-30.
-
-    '
+  source_note: Official IP India consolidated text incorporating amendments through
+    1 August 2024. This corpus copy supports queries from that snapshot date onward;
+    it is not a historical reconstruction of each individual provision.
   sha256: d57084888c69d70b16ed6a52a612363a526994203effa58880a26faaaa6e0678
-  in_force_from: '1970-04-20'
+  in_force_from: '2024-08-01'
+  in_force_to: null
+- id: patents_rules_2003_consolidated_2021
+  title: The Patents Rules, 2003
+  jurisdiction: IN
+  doc_type: rule
+  issuer: Government of India — CGPDTM / IP India
+  tier: A
+  language: en
+  url: https://ipindia.gov.in/frontend/pdf/patents/rules/Indian_Patent_Rules_2003__1_.pdf
+  source_note: Official consolidated rules through 21 September 2021. The 15 and 16
+    March 2024 amendment notifications are indexed separately below. Review both base
+    rules and amendments when answering a provision changed in 2024.
+  sha256: 42ffa9be3ea6b1b1f7031ceb9456fb60569b3f7ae6cde7ae3136a07f04ffeb3b
+  in_force_from: '2021-09-21'
+  in_force_to: null
+- id: patents_rules_amendment_2024_03_15
+  title: Patent Amendment Rules, 2024 (15 March 2024)
+  jurisdiction: IN
+  doc_type: rule
+  issuer: Government of India — CGPDTM / IP India
+  tier: A
+  language: en
+  url: https://ipindia.gov.in/frontend/pdf/patents/rules/1_83_1_Patent_Amendment_Rule_2024_Gazette_Copy.pdf
+  source_note: Official Gazette amendment to the Patents Rules, 2003, published 15
+    March 2024.
+  sha256: 2c7c546b595ce1137f08cbd977f9e17ba1668cbf78e9c2fd124ef8961158abe2
+  in_force_from: '2024-03-15'
+  in_force_to: null
+- id: patents_rules_second_amendment_2024_03_16
+  title: Patent Second Amendment Rules, 2024 (16 March 2024)
+  jurisdiction: IN
+  doc_type: rule
+  issuer: Government of India — CGPDTM / IP India
+  tier: A
+  language: en
+  url: https://ipindia.gov.in/frontend/pdf/patents/rules/Patent_second_amendment_rules_2024.pdf
+  source_note: Official Gazette second amendment to the Patents Rules, 2003, published
+    16 March 2024.
+  sha256: 51af3749e334fea6fc78d5504df26d5e0eff2086e8059543f55a5322a675a8a7
+  in_force_from: '2024-03-16'
   in_force_to: null
 - id: biological_diversity_act_2002
   title: The Biological Diversity Act, 2002
   jurisdiction: IN
   doc_type: statute
-  issuer: Government of India
+  issuer: Government of India text mirrored by WIPO Lex
   tier: A
   language: en
-  url: https://nationalcampa.nic.in/dashboard/ActAndRulesPDF/6967405c99df8.pdf
-  source_note: >
-    Hosted by the National Compensatory Afforestation Fund Management and Planning
-    Authority (nationalcampa.nic.in), a Government of India body — mirrors the Act as
-    published with the Biological Diversity Rules, 2004 appended; only the Act's own
-    chapters/sections are ingested (chunker stops matching once section numbering resets
-    for the Rules). Prefer indiacode.nic.in once it's reachable from the ingest host; the
-    text should be cross-checked against it before this is promoted past staged.
-    Retrieved 2026-09-30.
-  sha256: null
-  in_force_from: '2003-02-05'
+  download_strategy: wipo_lex
+  url: https://www.wipo.int/wipolex/en/legislation/details/23111
+  source_note: WIPO Lex English Act text includes amendments through Act No. 10 of
+    2023. This snapshot is treated as usable from 1 April 2024, when that amendment
+    came into force; it is not a historical reconstruction before that date. Its official
+    commencement notification is indexed separately below.
+  sha256: 341646b54ec22f0ff04878abc00d8e0fcd9209e4236618ab6a3a16356e88dc9b
+  in_force_from: '2024-04-01'
+  in_force_to: null
+- id: biological_diversity_amendment_commencement_2024
+  title: Statutory Order 295(E)
+  jurisdiction: IN
+  doc_type: notification
+  issuer: Government of India text mirrored by WIPO Lex
+  tier: A
+  language: en
+  download_strategy: wipo_lex
+  url: https://www.wipo.int/wipolex/en/legislation/details/23143
+  source_note: Official Gazette notification appointing 1 April 2024 as the commencement
+    date for Act No. 10 of 2023.
+  sha256: 6d81533eddca131c99042e6db6257f4900297b09b0d9d85bcbfbe96995cc0314
+  in_force_from: '2024-01-18'
+  in_force_to: null
+- id: biological_diversity_rules_2024
+  title: The Biological Diversity Rules, 2024
+  jurisdiction: IN
+  doc_type: rule
+  issuer: Government of India text mirrored by WIPO Lex
+  tier: A
+  language: en
+  download_strategy: wipo_lex
+  url: https://www.wipo.int/wipolex/en/legislation/details/23135
+  source_note: Official 2024 Rules text. The Gazette says these supersede the 2004
+    Rules and commence 60 days after 22 October 2024; the 2025 amendment is indexed
+    separately.
+  sha256: 33ec189d783e1124cb9c7f027ea9fabcae850bbb3df1a6753cdebc7fe776f4d1
+  in_force_from: '2024-12-21'
+  in_force_to: null
+- id: biological_diversity_rules_amendment_2025
+  title: The Biological Diversity (Amendment) Rules, 2025
+  jurisdiction: IN
+  doc_type: rule
+  issuer: Government of India text mirrored by WIPO Lex
+  tier: A
+  language: en
+  download_strategy: wipo_lex
+  url: https://www.wipo.int/wipolex/en/legislation/details/23136
+  source_note: Official 2025 amendment to the Biological Diversity Rules, 2024. It
+    comes into force on 1 November 2025; read with the 2024 Rules above.
+  sha256: a32a3bcac48955f0285e7a5c589880e6bfa00ac9f5d53c3d969616761d4dc63a
+  in_force_from: '2025-11-01'
+  in_force_to: null
+- id: biological_diversity_abs_regulations_2025
+  title: Biological Diversity ABS Regulations, 2025
+  jurisdiction: IN
+  doc_type: regulation
+  issuer: National Biodiversity Authority — Government of India
+  tier: A
+  language: en
+  url: https://www.nbaindia.nic.in/sites/default/files/2026-07/GNABSREG_2025.pdf
+  source_note: Official NBA regulations notified 29 April and published in the Gazette
+    on 30 April 2025, replacing the 2014 ABS guidelines. These apply alongside the
+    Biological Diversity Act and 2024 Rules as subsequently amended.
+  sha256: 15beed19974f0948db417a6a0be39d147f8ff5b1871824888a2062b37a4f20e0
+  in_force_from: '2025-04-30'
+  in_force_to: null
+- id: geographical_indications_act_1999
+  title: The Geographical Indications of Goods (Registration and Protection) Act,
+    1999
+  jurisdiction: IN
+  doc_type: statute
+  issuer: Government of India text mirrored by WIPO Lex
+  tier: A
+  language: en
+  download_strategy: wipo_lex
+  url: https://www.wipo.int/wipolex/en/legislation/details/22959
+  source_note: WIPO Lex English text amended through Act No. 18 of 2023. IP-related
+    amendments in the Jan Vishwas Act took effect on 1 August 2024. Consult the 2023
+    amendment text and Gazette commencement notification together for that change.
+  sha256: 1d28f42e033d485f0cc52f064b003b8f933c25080adb9c6254de0425968de33e
+  in_force_from: '2024-08-01'
+  in_force_to: null
+- id: geographical_indications_rules_2002
+  title: The Geographical Indications of Goods (Registration and Protection) Rules,
+    2002
+  jurisdiction: IN
+  doc_type: rule
+  issuer: Government of India — CGPDTM / IP India
+  tier: A
+  language: en
+  url: https://ipindia.gov.in/frontend/pdf/mannual/1_27_1_gi-rules.pdf
+  source_note: Official base Rules, read together with the 2020 and 2025 amendment
+    notices below.
+  sha256: 61f79666a010ec619de7b1317607143ef570505ba36210d5f87b3236d9fe3450
+  in_force_from: '2003-09-15'
+  in_force_to: null
+- id: geographical_indications_rules_amendment_2020
+  title: Geographical Indications Rules Amendment, 2020
+  jurisdiction: IN
+  doc_type: rule
+  issuer: Government of India — CGPDTM / IP India
+  tier: A
+  language: en
+  url: https://ipindia.gov.in/frontend/pdf/mannual/Notification-GI_amenmdent_rules.pdf
+  source_note: Official Gazette amendment published 26 August 2020; read with the
+    base Rules.
+  sha256: b7918cf2110899cb5ff1612c08bdb39d37b0d45babbfc2aac9c66a63c3a30d15
+  in_force_from: '2020-08-26'
+  in_force_to: null
+- id: geographical_indications_rules_amendment_2025
+  title: Geographical Indications Rules Amendment, 2025
+  jurisdiction: IN
+  doc_type: rule
+  issuer: Government of India — CGPDTM / IP India
+  tier: A
+  language: en
+  url: https://ipindia.gov.in/frontend/pdf/mannual/GAZETTE_NOTIFICATION_AMENDED_GI_RULES_2025.pdf
+  source_note: Official Gazette amendment published 3 November 2025; read with the
+    base Rules and 2020 amendment.
+  sha256: 2ae4225d806162e3a4303d02e9187f55e11af3a579813319e398fc1009a0889e
+  in_force_from: '2025-11-03'
+  in_force_to: null
+- id: trade_marks_act_1999
+  title: The Trade Marks Act, 1999
+  jurisdiction: IN
+  doc_type: statute
+  issuer: Government of India text mirrored by WIPO Lex
+  tier: A
+  language: en
+  download_strategy: wipo_lex
+  url: https://www.wipo.int/wipolex/en/legislation/details/22958
+  source_note: WIPO Lex English text amended through Act No. 18 of 2023. The Jan Vishwas
+    amendments listed for this Act commenced 1 August 2024; the source's current version
+    and commencement notification are both retained for traceability.
+  sha256: e12835963e0aa1091202a459009cd90160e4504abb398bdcc54671541cd4071f
+  in_force_from: '2024-08-01'
+  in_force_to: null
+- id: jan_vishwas_ip_commencement_2024
+  title: S.O. 2972(E), commencement of Jan Vishwas IP amendments
+  jurisdiction: IN
+  doc_type: notification
+  issuer: Government of India — eGazette
+  tier: A
+  language: en
+  url: https://egazette.gov.in/WriteReadData/2024/255755.pdf
+  source_note: Official Gazette notification bringing specified Patents, Trade Marks
+    and GI amendments into force on 1 August 2024.
+  sha256: c728e2f2de608e69e707a36876e823db447656406dafd2c19b2455a528d0b2eb
+  in_force_from: '2024-07-26'
+  in_force_to: null
+- id: trade_marks_rules_2017
+  title: The Trade Marks Rules, 2017
+  jurisdiction: IN
+  doc_type: rule
+  issuer: Government of India — CGPDTM / IP India
+  tier: A
+  language: en
+  url: https://ipindia.gov.in/frontend/pdf/trade-mark/act/1_69_1_Trade_Marks_Rules_2017.pdf
+  source_note: Official IP India text of the Trade Marks Rules, 2017.
+  sha256: b858aa6874a4373be03b1ee3a7a926f9f7b79dc7a15dbffdc2109cf6c3a33e92
+  in_force_from: '2017-03-06'
+  in_force_to: null
+- id: trips_agreement
+  title: Agreement on Trade-Related Aspects of Intellectual Property Rights (TRIPS)
+  jurisdiction: INTL
+  doc_type: treaty
+  issuer: World Trade Organization
+  tier: A
+  language: en
+  url: https://www.wto.org/english/docs_e/legal_e/27-trips.pdf
+  source_note: Official WTO text of the TRIPS Agreement. The 2017 Protocol amendment
+    to the Agreement is a separate instrument and is not represented by this source
+    alone.
+  sha256: baa5beb7dda530e57dcf126779e4a0a53571460e19ed72a8aeb6e90500af5540
+  in_force_from: '1995-01-01'
+  in_force_to: null
+- id: convention_on_biological_diversity
+  title: Convention on Biological Diversity
+  jurisdiction: INTL
+  doc_type: treaty
+  issuer: Convention on Biological Diversity Secretariat
+  tier: A
+  language: en
+  url: https://www.cbd.int/doc/legal/cbd-en.pdf
+  source_note: Official CBD Secretariat treaty text.
+  sha256: 9acd3886bfb0b3c3a4d75b254b53dd4ab084d7ad59915f09f03bbe92cdc75517
+  in_force_from: '1993-12-29'
+  in_force_to: null
+- id: nagoya_protocol
+  title: Nagoya Protocol on Access and Benefit-sharing
+  jurisdiction: INTL
+  doc_type: treaty
+  issuer: Convention on Biological Diversity Secretariat
+  tier: A
+  language: en
+  url: https://www.cbd.int/abs/doc/protocol/nagoya-protocol-en.pdf
+  source_note: Official CBD Secretariat treaty text. India is a Party; the Protocol
+    entered into force internationally on 12 October 2014.
+  sha256: cdbd496bd361317d3b7237124177974bebac4cc800cf1974896bc19234cce856
+  in_force_from: '2014-10-12'
+  in_force_to: null
+- id: new_drugs_clinical_trials_rules_2019
+  title: The New Drugs and Clinical Trials Rules, 2019
+  jurisdiction: IN
+  doc_type: rule
+  issuer: Government of India — CDSCO
+  tier: A
+  language: en
+  url: https://cdsco.gov.in/opencms/resources/UploadCDSCOWeb/2022/new_DC_rules/New%20Drugs%20and%20Clinical%20Trials%20Rules%2C%202019.pdf
+  source_note: Official CDSCO consolidated Rules text from its 2022 publication. Later
+    final amendments (including G.S.R. 581(E), 19 September 2024 and the 2026 amendment)
+    must be added as amendment sources before relying on provisions they changed.
+  sha256: 555d57d9e56112e9bafc7027bb8ece0b4218dbb34c0f702485f08bdeacb70016
+  in_force_from: '2022-10-14'
+  in_force_to: null
+- id: drugs_cosmetics_act_1940
+  title: The Drugs and Cosmetics Act, 1940
+  jurisdiction: IN
+  doc_type: statute
+  issuer: Government of India — India Code
+  tier: A
+  language: en
+  url: https://cdsco.gov.in/opencms/resources/UploadCDSCOWeb/2022/acts_and_rules/Drugs%20and%20Cosmetics%20Act,%201940.pdf
+  source_note: Official India Code Act text. This file is a source snapshot, not a
+    historical reconstruction; Chapter III and IV commencement dates differ, and later
+    Gazette amendments must be checked for the specific provision before relying on
+    it.
+  sha256: 56fdd3838e9f39da3593ad488d3db537f05139a4e112bdba693f8874139aa9cc
+  in_force_from: '2022-11-22'
+  in_force_to: null
+- id: drugs_rules_1945_consolidated_2024
+  title: The Drugs Rules, 1945 (as amended through 1 July 2024)
+  jurisdiction: IN
+  doc_type: rule
+  issuer: Government of India — CDSCO
+  tier: A
+  language: en
+  url: https://cdsco.gov.in/opencms/resources/UploadCDSCOWeb/2022/drug_rules/Drugs%20Rules%201945_2024%2009.pdf
+  source_note: CDSCO consolidated text expressly amended through 1 July 2024 (G.S.R.
+    360(E)). Later amendments may not be included. CDSCO states AYUSH drug rules are
+    also published by the Ministry of Ayush; this source is not a substitute for those
+    separate rules.
+  sha256: fb5b7675a9a0e9cb539fa0131875922f1bdd290389a192aa1a67d0b9d871eeb7
+  in_force_from: '2024-07-01'
+  in_force_to: null
+- id: drugs_magic_remedies_act_1954
+  title: The Drugs and Magic Remedies (Objectionable Advertisements) Act, 1954
+  jurisdiction: IN
+  doc_type: statute
+  issuer: Government of India — India Code
+  tier: A
+  language: en
+  url: https://www.indiacode.nic.in/indiacode/bitstream/123456789/1412/1/A1954-21.pdf
+  source_note: Official India Code Act text; read with applicable rules and later
+    Gazette notifications.
+  sha256: 2140521aae8b7954dc5181f5d541e4431ae0a9dd494c3744bebba2f562bbe630
+  in_force_from: '1955-04-01'
+  in_force_to: null
+- id: fssai_ayurveda_aahara_regulations_2022
+  title: Food Safety and Standards (Ayurveda Aahara) Regulations, 2022
+  jurisdiction: IN
+  doc_type: regulation
+  issuer: Food Safety and Standards Authority of India
+  tier: A
+  language: en
+  url: https://stg-old.fssai.gov.in/upload/notifications/2022/05/62789a20b54bdGazette_Notification_Ayurveda_Aahara_09_05_2022.pdf
+  source_note: Official Gazette text published in May 2022. Later FSSAI orders add
+    covered Category A Ayurveda Aahara recipes; the 2025 order is indexed separately
+    and newer updates must be checked before operational decisions.
+  sha256: 1ae8cfc632fad0a775316a84999a48adb6cf4b47d05bd4faa75f5190c511f699
+  in_force_from: '2022-05-09'
+  in_force_to: null
+- id: fssai_ayurveda_aahara_category_a_2025
+  title: Ayurveda Aahara covered under the Food Safety and Standards (Ayurveda Aahara)
+    Regulations, 2022 (2025 order)
+  jurisdiction: IN
+  doc_type: notification
+  issuer: Food Safety and Standards Authority of India
+  tier: A
+  language: en
+  url: https://www.fssai.gov.in/upload/uploadfiles/files/Order%20dated%2025-07-2025%20enclosing%20Ayurveda%20Aahara.pdf
+  source_note: Official 25 July 2025 FSSAI order listing Category A recipes under
+    the 2022 Regulations.
+  sha256: 498d6f579357e7bb8e8d7b9f7741db5863f6eea8d29ffd559ff9add7d32d7edc
+  in_force_from: '2025-07-25'
+  in_force_to: null
+- id: new_drugs_clinical_trials_amendment_2024
+  title: New Drugs and Clinical Trials (Amendment) Rules, 2024 (G.S.R. 581(E))
+  jurisdiction: IN
+  doc_type: rule
+  issuer: Government of India — CDSCO
+  tier: A
+  language: en
+  url: https://www.cdsco.gov.in/opencms/resources/UploadCDSCOWeb/2018/UploadGazette_NotificationsFiles/2024.09.19_NDCTR_G.S.R.%20581%28E%29.pdf
+  source_note: Official Gazette amendment; comes into force on 1 April 2025.
+  sha256: 151b512eed4ec82c6a634c0ccafb0eb110131591691dc1586f9bb47cf91b5447
+  in_force_from: '2025-04-01'
+  in_force_to: null
+- id: new_drugs_clinical_trials_amendment_2026_test_license
+  title: New Drugs and Clinical Trials (Amendment) Rules, 2026 (G.S.R. 46(E))
+  jurisdiction: IN
+  doc_type: rule
+  issuer: Government of India — CDSCO
+  tier: A
+  language: en
+  url: https://cdsco.gov.in/opencms/resources/UploadCDSCOWeb/2018/UploadGazette_NotificationsFiles/2026.01.20_%20G.S.R.%2046%28E%29_Notification%20about%20changes%20to%20requirements%20of%20Test%20license%20under%20NDCT%20Rules%202019.pdf
+  source_note: Official Gazette amendment, effective 45 days after its 20 January
+    2026 publication.
+  sha256: 02bb3d7e8e67b2a54c7d9bb65b004fa03ff470f0cf6cbf873bcc0b2f76795a40
+  in_force_from: '2026-03-06'
+  in_force_to: null
+- id: new_drugs_clinical_trials_second_amendment_2026
+  title: New Drugs and Clinical Trials (Second Amendment) Rules, 2026 (G.S.R. 50(E))
+  jurisdiction: IN
+  doc_type: rule
+  issuer: Government of India — CDSCO
+  tier: A
+  language: en
+  url: https://cdsco.gov.in/opencms/resources/UploadCDSCOWeb/2018/UploadGazette_NotificationsFiles/2026.01.21%20G.S.R.%2050%28E%29_Notification%20for%20amendment%20in%20NDCT%20Rules%2C%202019%20for%20online%20intimation%20mechanism%20for%20BA%20BE%20studies%20of%20unapproved%20drugs%20for%20export%20purpose.pdf
+  source_note: Official Gazette amendment; effective 90 days after its 21 January
+    2026 publication.
+  sha256: 98c1d89293ffe6f34fd1ef9f90390a893de4e020a827f55ecd06a3c637a005ca
+  in_force_from: '2026-04-21'
   in_force_to: null

@@ -17,7 +17,7 @@ from typing import Any
 import sqlalchemy as sa
 from sqlalchemy.orm import Session
 
-from app.audit.chain import append_entry, entry_for_request, verify_chain_segment
+from app.audit.chain import append_entry, verify_chain_segment
 from app.audit.merkle import merkle_proof, verify_proof
 from app.core.hashing import canonical_json, sha256_hex
 from app.retrieval import repo
@@ -49,6 +49,7 @@ def build_receipt(
     prompt_version: str,
     result_payload: dict[str, Any],
     request_payload: dict[str, Any] | None = None,
+    conversation_id: str | None = None,
 ) -> Receipt:
     """Appends one hash-chain entry and returns the public `Receipt` for it. `result_payload`
     is the rendered response (AnswerCard/RefusalCard/ClassifyResult/PatentRisk/AbsResult/
@@ -59,23 +60,37 @@ def build_receipt(
     that produced the result — e.g. a `Formulation` — never the raw natural-language query
     text, which invariant I4 forbids persisting.
     """
+    from app.history.service import scrub_payload
+
+    # Hash the scrubbed snapshot before its receipt ID is assigned. The audit row
+    # keeps this hash after the saved content expires; it never retains message text.
+    result_payload = scrub_payload(result_payload)
+    request_payload = scrub_payload(request_payload)
     entry: dict[str, Any] = {
         "request_id": request_id,
         "corpus_version": corpus_version_label,
         "query_hash": query_hash,
         "chunk_hashes": [s.span.sha256 for s in cited_spans],
-        "spans": [
-            {"evidence_id": s.evidence_id, "chunk_id": s.chunk_id, "sha256": s.span.sha256}
-            for s in cited_spans
-        ],
+        "spans": [{"evidence_id": s.evidence_id, "chunk_id": s.chunk_id, "sha256": s.span.sha256} for s in cited_spans],
         "model_ids": model_ids.model_dump(),
         "prompt_version": prompt_version,
         "result_hash": sha256_hex(canonical_json(result_payload)),
-        "result": result_payload,
-        "request_payload": request_payload,
+        "result_receipt_field": result_payload.get("receipt_id"),
+        "request_payload_hash": sha256_hex(canonical_json(request_payload)) if request_payload else None,
         "ts": datetime.now(UTC).isoformat(),
     }
     chain_entry = append_entry(session, request_id, entry)
+    from app.history.service import save_result
+
+    save_result(
+        session,
+        request_id,
+        result_payload,
+        _receipt_id(chain_entry.seq),
+        chain_entry.entry_hash,
+        request_payload,
+        conversation_id,
+    )
     session.commit()
 
     return Receipt(
@@ -96,9 +111,7 @@ def get_receipt(session: Session, receipt_id: str) -> Receipt | None:
     seq = _seq_from_receipt_id(receipt_id)
     if seq is None:
         return None
-    row = session.execute(
-        sa.text("SELECT * FROM audit_log WHERE seq = :seq"), {"seq": seq}
-    ).mappings().first()
+    row = session.execute(sa.text("SELECT * FROM audit_log WHERE seq = :seq"), {"seq": seq}).mappings().first()
     if row is None:
         return None
     payload = row["payload"]
@@ -120,9 +133,7 @@ def verify_receipt(session: Session, receipt_id: str) -> VerifyResult | None:
     seq = _seq_from_receipt_id(receipt_id)
     if seq is None:
         return None
-    row = session.execute(
-        sa.text("SELECT * FROM audit_log WHERE seq = :seq"), {"seq": seq}
-    ).mappings().first()
+    row = session.execute(sa.text("SELECT * FROM audit_log WHERE seq = :seq"), {"seq": seq}).mappings().first()
     if row is None:
         return None
 
@@ -190,13 +201,17 @@ def latest_result_for_request(session: Session, request_id: str) -> StoredResult
         uuid.UUID(request_id)
     except ValueError:
         return None
-    entry = entry_for_request(session, request_id)
-    if entry is None or "result" not in entry.payload:
+    from app.core.errors import ApiError
+    from app.history.service import get_result
+
+    try:
+        row = get_result(session, request_id)
+    except ApiError:
         return None
     return StoredResult(
-        request_id=entry.request_id,
-        receipt_id=_receipt_id(entry.seq),
-        entry_hash=entry.entry_hash,
-        result=entry.payload["result"],
-        request_payload=entry.payload.get("request_payload"),
+        request_id=request_id,
+        receipt_id=row["receipt_id"],
+        entry_hash=row["entry_hash"],
+        result=row["result"],
+        request_payload=row["request_payload"],
     )

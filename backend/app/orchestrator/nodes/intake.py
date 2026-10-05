@@ -60,6 +60,9 @@ def run(state: RequestState, session: Session) -> None:
         raise NoLiveCorpusError("no live corpus_version — run `make ingest && make promote`")
     state.corpus_version_id, state.corpus_version_label = version
 
+    from app.history.service import add_user_message, recent_context
+
+    state.conversation_context = recent_context(session, state.request.conversation_id)
     state.persona = state.request.persona
 
     session.execute(
@@ -75,3 +78,5 @@ def run(state: RequestState, session: Session) -> None:
         )
     )
     session.commit()
+    if state.request.conversation_id:
+        add_user_message(session, state.request.conversation_id, state.scrubbed_query, state.request_id)

@@ -13,6 +13,7 @@ from datetime import date
 
 from sqlalchemy.orm import Session
 
+from app.config import get_settings
 from app.retrieval import embed, keyword, repo
 
 RRF_K = 60
@@ -42,23 +43,47 @@ def hybrid_retrieve(
     query_en: str,
     top_n_per_jurisdiction: int = 8,
     doc_types: list[str] | None = None,
+    doc_keys: list[str] | None = None,
 ) -> list[Candidate]:
     """Dense + keyword search, RRF-fused, bucketed per jurisdiction, returned interleaved
     (IN before INTL — §5.2's ordering rule for `AnswerCard.sections`).
     """
-    query_vector = embed.embed_query(query_en)
+    query_vector = None
+    if repo.embedding_model_for_version(session, corpus_version_id) == get_settings().embed_model:
+        try:
+            query_vector = embed.embed_query(query_en)
+        except embed.EmbeddingUnavailable:
+            pass  # Keyword retrieval still uses the same authoritative, pinned corpus.
 
     all_candidates: dict[str, Candidate] = {}
     ordered_ids_by_jurisdiction: dict[str, list[str]] = {}
 
     for jurisdiction in jurisdictions:
-        dense = repo.dense_search(
-            session, corpus_version_id, [jurisdiction], as_of, query_vector,
-            top_n=40, doc_types=doc_types,
+        dense = (
+            repo.dense_search(
+                session,
+                corpus_version_id,
+                [jurisdiction],
+                as_of,
+                query_vector,
+                top_n=40,
+                doc_types=doc_types,
+                doc_keys=doc_keys,
+            )
+            if query_vector is not None
+            else []
         )
+        # Dense-only matches must clear a relevance floor; distant neighbors are not evidence.
+        dense = [(row, score) for row, score in dense if score >= 0.45]
         kw = keyword.keyword_search(
-            session, corpus_version_id, [jurisdiction], as_of, query_en,
-            top_n=40, doc_types=doc_types,
+            session,
+            corpus_version_id,
+            [jurisdiction],
+            as_of,
+            query_en,
+            top_n=40,
+            doc_types=doc_types,
+            doc_keys=doc_keys,
         )
 
         dense_ranked = [str(row.id) for row, _ in dense]
@@ -69,9 +94,7 @@ def hybrid_retrieve(
         kw_scores = dict(kw)
 
         for chunk_id in fused:
-            candidate = all_candidates.setdefault(
-                chunk_id, Candidate(chunk_id=chunk_id, jurisdiction=jurisdiction)
-            )
+            candidate = all_candidates.setdefault(chunk_id, Candidate(chunk_id=chunk_id, jurisdiction=jurisdiction))
             candidate.scores["dense"] = dense_scores.get(chunk_id, 0.0)
             candidate.scores["fts"] = kw_scores.get(chunk_id, 0.0)
             candidate.scores["rrf"] = fused[chunk_id]

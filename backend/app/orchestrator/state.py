@@ -33,6 +33,7 @@ class RequestState:
     scrubbed_query: str = ""
     query_hash: str = ""
     query_en: str = ""
+    conversation_context: str = ""
 
     # DB
     corpus_version_id: str = ""
@@ -44,10 +45,13 @@ class RequestState:
 
     # retrieve / resolve
     evidence_pack: list[NumberedSpan] = field(default_factory=list)
+    used_dense_retrieval: bool = False
     retrieval_margin: float = 1.0
 
     # generate / resolve
+    generation_unavailable: bool = False
     generation: GenerationResult | None = None
+    verification_feedback: str = ""
     resolved_claims: list[ResolvedClaim] = field(default_factory=list)
     gaps: list[str] = field(default_factory=list)
     needs_clarification: str | None = None

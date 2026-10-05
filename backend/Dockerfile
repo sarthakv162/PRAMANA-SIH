@@ -13,7 +13,7 @@ COPY eval /workspace/eval
 COPY contracts /workspace/contracts
 
 # This image runs all transformer models on CPU. Install the official CPU wheel first so
-# sentence-transformers doesn't pull PyPI's CUDA runtime bundles into the prototype image.
+# the verifier avoids PyPI's CUDA runtime bundles in the local application image.
 RUN pip install --no-cache-dir \
     --index-url https://pypi.org/simple \
     --extra-index-url https://download.pytorch.org/whl/cpu \

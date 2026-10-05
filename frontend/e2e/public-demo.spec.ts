@@ -1,0 +1,41 @@
+import { expect, test } from '@playwright/test';
+import { readFileSync } from 'node:fs';
+
+test('public production demo resumes real history without a key and displays cited PDF highlights', async ({ page }) => {
+  test.skip(process.env.RUN_PUBLIC_DEMO_E2E !== '1', 'Requires the isolated real hosted container.');
+  test.setTimeout(120_000);
+  const acceptance = JSON.parse(readFileSync('../eval/results/demo-container.json', 'utf8'));
+  await page.addInitScript((id) => sessionStorage.setItem('pramana-conversation-id', id), acceptance.conversation_id);
+  await page.goto('/');
+  await expect(page.locator('.mode-chip')).toHaveText('Live API');
+  await expect(page.locator('.claim-card .claim-text').first()).toBeVisible();
+  expect(await page.evaluate(() => sessionStorage.getItem('pramana-workspace-key'))).toBeNull();
+  await page.locator('.history-panel summary').click();
+  await expect(page.getByText(/Public demo: everyone shares/)).toBeVisible();
+  await expect(page.getByLabel('Demo workspace key')).toHaveCount(0);
+  await page.reload();
+  await expect(page.locator('.claim-card .claim-text').first()).toBeVisible();
+  const workers: string[] = [];
+  page.on('request', (request) => { if (request.url().includes('pdf.worker')) workers.push(request.url()); });
+  await page.getByRole('button', { name: /Open in source: The Patents Act, 1970/ }).first().click();
+  const canvas = page.locator('.pdf-viewer canvas');
+  await expect(canvas).toBeVisible();
+  await expect.poll(() => canvas.evaluate((node) => {
+    const c = node as HTMLCanvasElement;
+    const data = c.getContext('2d')?.getImageData(0, 0, c.width, c.height).data;
+    if (!data) return 0;
+    let highlighted = 0;
+    for (let i = 0; i < data.length; i += 4) if (data[i] - data[i + 1] > 8 && data[i + 1] - data[i + 2] > 15) highlighted++;
+    return highlighted;
+  })).toBeGreaterThan(100);
+  expect(workers.some((url) => new URL(url).pathname.startsWith('/assets/'))).toBeTruthy();
+  await page.screenshot({ path: '../eval/results/screenshots/public-demo-citation.png', animations: 'disabled' });
+  await page.getByRole('button', { name: 'Close' }).click();
+  await page.goto('/case');
+  await expect(page.locator('.case-summary').filter({ hasText: acceptance.result.request_id })).toBeVisible();
+  await expect(page.getByLabel('Demo workspace key')).toHaveCount(0);
+  const created = await page.request.post('/v1/conversations', { data: { title: 'Public browser deletion' } });
+  expect(created.status()).toBe(201);
+  const conversation = await created.json();
+  expect((await page.request.delete(`/v1/conversations/${conversation.id}`)).status()).toBe(204);
+});

@@ -34,6 +34,7 @@ class WhatWouldHelp(ContractModel):
 
 class PatentRisk(ContractModel):
     type: Literal["patent_risk"] = "patent_risk"
+    assessment_status: Literal["draft"] = "draft"
     gauge: Risk
     score: float = Field(ge=0.0, le=1.0)
     per_section: list[PatentRiskSection]

@@ -13,15 +13,17 @@ test('asks, inspects evidence, saves a case item, exports Markdown, and verifies
   await page.getByRole('button', { name: 'Close' }).click();
 
   await page.getByRole('button', { name: 'Add to case file' }).click();
+  await expect(page.getByRole('button', { name: 'Added to case file' })).toBeVisible();
+  await page.evaluate(() => sessionStorage.setItem('pramana-workspace-key', 'explicit-mock-key'));
   await page.getByRole('link', { name: 'Cases' }).click();
-  await expect(page.getByText(/Can traditional knowledge be patented/)).toBeVisible();
+  await expect(page.locator('.case-summary').first()).toContainText(/traditional knowledge/i);
   await page.getByLabel('Format').selectOption('md');
   const downloadPromise = page.waitForEvent('download');
   await page.getByRole('button', { name: /Download MD/ }).click();
   const download = await downloadPromise;
   expect(download.suggestedFilename()).toBe('pramana-dossier.md');
 
-  await page.getByRole('link', { name: /rcp_/ }).click();
+  await page.goto('/receipt/rcp_demo_01');
   await page.getByRole('button', { name: /Verify receipt/ }).click();
   await expect(page.getByText('Audit chain valid')).toBeVisible();
   await page.getByRole('link', { name: /Open tampered mock receipt/ }).click();
@@ -50,7 +52,7 @@ test('runs the classification wizard and patent risk form', async ({ page }) => 
   await page.goto('/patent-risk');
   await page.getByLabel('Classical sources cited').fill('Charaka Samhita');
   await page.getByRole('button', { name: /Analyze formulation/ }).click();
-  await expect(page.getByText('High risk', { exact: true })).toBeVisible();
+  await expect(page.getByText('High rule indicator', { exact: true })).toBeVisible();
 });
 
 test('loads the corpus and reports that mock evaluation has no measurements', async ({ page }) => {

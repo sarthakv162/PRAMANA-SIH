@@ -23,7 +23,7 @@ import re
 from dataclasses import dataclass, field
 
 from app.core.hashing import sha256_hex
-from app.ingest.parse_pdf import ParsedDocument, page_for_offset
+from app.ingest.parse_pdf import ParsedDocument, clean_page_text, page_for_offset
 
 # Body start: Acts open with a full front-matter TOC that repeats every chapter/section
 # heading; the operative text repeats "CHAPTER I" once more right before section 1's real
@@ -52,9 +52,26 @@ _SECTION_START_OMITTED = re.compile(r"(?<!\d)(\d{1,3}[A-Z]{0,2})\.\s+(\[[^\]]*\]
 # section's own genuine subsection marker. Real section starts are never preceded by the
 # word "section(s)".
 _NOT_A_CROSS_REFERENCE = r"(?<!section )(?<!Section )(?<!sections )(?<!Sections )"
-_SECTION_START_NO_HEADING = re.compile(
-    _NOT_A_CROSS_REFERENCE + r"(?<!\d)(\d{1,3}[A-Z]{0,2})\.\s+(?=\(\d+\))"
+_SECTION_START_NO_HEADING = re.compile(_NOT_A_CROSS_REFERENCE + r"(?<!\d)(\d{1,3}[A-Z]{0,2})\.\s+(?=\(\d+\))")
+
+# Treaties and international instruments are organised as "Article 1. ...", rather
+# than Indian Act sections. Requiring a line-start heading avoids matching ordinary
+# prose references ("under Article 1") and lets the same verbatim offset contract be
+# used for both statutes and treaties. Some source PDFs repeat the article list in a
+# contents page, so `_article_run` selects the longest monotonic run and breaks ties in
+# favour of the later occurrence (the operative text follows the contents).
+_ARTICLE_START = re.compile(
+    r"(?m)^[ \t]*[Aa][Rr][Tt][Ii][Cc][Ll][Ee][ \t]*(?:\r?\n[ \t]*)?"
+    r"(\d+[A-Z]?)[ \t.:—–-]*(?:([A-Z][^\r\n]*))?[ \t]*$"
 )
+_ARTICLE_NUMBER = re.compile(r"Article[ \t]+(\d+[A-Z]?)\b", re.IGNORECASE)
+
+# Rules PDFs use headings on their own line ("Rule 19A"), with the title on the
+# following line. Contents pages instead put the heading and title on the same line,
+# so requiring a standalone heading skips the contents list and ordinary prose refs.
+_RULE_START = re.compile(r"(?im)^[ \t]*Rule[ \t]+(\d{1,3}[A-Z]{0,2})\.?[ \t]*$")
+_RULE_NUMBER = re.compile(r"(?i)Rule[ \t]+(\d{1,3}[A-Z]{0,2})\b")
+_CHAPTER_LINE = re.compile(r"(?im)^[ \t]*CHAPTER[ \t]+[IVXLCDM]+\b[^\r\n]*")
 
 _NUMBERED_CLAUSE = re.compile(r"(?<!\S)\((\d{1,3})\)\s")
 _LETTERED_CLAUSE = re.compile(r"(?<!\S)\(([a-z]{1,3})\)\s")
@@ -93,6 +110,22 @@ class ChunkingResult:
     chunks: list[ChunkDraft] = field(default_factory=list)
     edges: list[EdgeDraft] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
+
+
+@dataclass(frozen=True)
+class ArticleHeading:
+    number: str
+    title: str
+    start: int
+    end: int
+
+
+@dataclass(frozen=True)
+class RuleHeading:
+    number: str
+    title: str | None
+    start: int
+    end: int
 
 
 def _find_body_start(full_text: str) -> int:
@@ -190,9 +223,7 @@ def _split_clauses(
     match inside the clause text would almost always be an internal cross-reference, not
     another nesting level.
     """
-    numbered = (
-        _valid_numbered_run(body, list(_NUMBERED_CLAUSE.finditer(body))) if allow_numbered else []
-    )
+    numbered = _valid_numbered_run(body, list(_NUMBERED_CLAUSE.finditer(body))) if allow_numbered else []
     lettered = _valid_lettered_run(list(_LETTERED_CLAUSE.finditer(body)))
 
     if numbered and (not lettered or numbered[0].start() <= lettered[0].start()):
@@ -209,9 +240,7 @@ def _split_clauses(
         label = m.group(1)
         clause_key = f"{section_key}{fmt.format(label)}"
         clause_text = body[start:end].strip()
-        results.append(
-            (clause_key, clause_text, body_start + start, body_start + start + len(clause_text))
-        )
+        results.append((clause_key, clause_text, body_start + start, body_start + start + len(clause_text)))
     return results
 
 
@@ -258,10 +287,284 @@ def _fill_numeric_gaps(full_text: str, matches: list[re.Match[str]]) -> list[re.
     return sorted(filled, key=lambda m: m.start())
 
 
-def chunk_document(doc_short_key: str, parsed: ParsedDocument) -> ChunkingResult:
+def _article_number(raw: str) -> tuple[int, str]:
+    number = re.match(r"\d+", raw)
+    assert number is not None
+    return int(number.group()), raw[number.end() :]
+
+
+def _article_headings(parsed: ParsedDocument) -> list[ArticleHeading]:
+    """Map Article headings from line-preserving PDF text to normalized-text offsets.
+
+    Run against each page's original extracted text, then locate each matched heading in
+    normalized page text in sequence, preserving the offset contract used by evidence spans.
+    """
+    headings: list[ArticleHeading] = []
+    for page, page_offset in zip(parsed.pages, parsed.page_offsets, strict=True):
+        for match in _ARTICLE_START.finditer(page.raw_text):
+            number = match.group(1)
+            # A wrapped heading must map to its own position, not an earlier inline
+            # reference to the same article on this page. Cleaning the raw prefix uses
+            # exactly the normalization that establishes the evidence offsets.
+            normalized_cursor = len(clean_page_text(page.raw_text[: match.start()]))
+            normalized_match = _ARTICLE_NUMBER.search(page.text, normalized_cursor)
+            if normalized_match is None or normalized_match.group(1).casefold() != number.casefold():
+                continue
+            title = (match.group(2) or "").strip()
+            if not title:
+                title = next((line.strip() for line in page.raw_text[match.end() :].splitlines() if line.strip()), "")
+            headings.append(
+                ArticleHeading(
+                    number=number,
+                    title=" ".join(title.split()),
+                    start=page_offset + normalized_match.start(),
+                    end=page_offset + normalized_match.end(),
+                )
+            )
+    return headings
+
+
+def _article_run(parsed: ParsedDocument) -> list[ArticleHeading]:
+    """Find the operative, ordered Article headings in an international instrument.
+
+    A table of contents can repeat Article 1..N before the actual text. Selecting the
+    longest monotonic run and preferring the later run handles that layout without
+    mistaking inline citations for boundaries. The result is deliberately rejected if
+    fewer than three articles are found; a few line-start references are not enough to
+    classify a document as a treaty.
+    """
+    candidates = _article_headings(parsed)
+    runs: list[list[ArticleHeading]] = []
+    for start, first in enumerate(candidates):
+        if _article_number(first.number)[0] != 1:
+            continue
+        run = [first]
+        last = _article_number(first.number)
+        for match in candidates[start + 1 :]:
+            current = _article_number(match.number)
+            if current[0] < last[0] or (current[0] == last[0] and current[1] <= last[1]):
+                break
+            run.append(match)
+            last = current
+        if len(run) >= 3:
+            runs.append(run)
+    if not runs:
+        return []
+    selected = max(runs, key=lambda run: (len(run), run[0].start))
+    # Booklet spreads can extract the right-hand page before the left-hand page
+    # (3, 4, 1, 2, ...). A short ordered fragment is not a complete treaty. Keep
+    # such a document at page granularity and flag it instead of assigning the
+    # rest of its text to the last article in that fragment.
+    selected_numbers = {heading.number for heading in selected}
+    candidate_numbers = {heading.number for heading in candidates}
+    if selected_numbers != candidate_numbers:
+        return []
+    return selected
+
+
+def _chunk_articles(doc_short_key: str, parsed: ParsedDocument) -> ChunkingResult:
+    result = ChunkingResult()
+    matches = _article_run(parsed)
+    for index, match in enumerate(matches):
+        next_start = matches[index + 1].start if index + 1 < len(matches) else len(parsed.full_text)
+        if index + 1 == len(matches) and next_start - match.end > MAX_UNBOUNDED_TAIL_CHARS:
+            next_start = match.end + MAX_UNBOUNDED_TAIL_CHARS
+            result.warnings.append(
+                f"{doc_short_key}: last article {match.number} had an unbounded tail "
+                f"(no following article found) — truncated at {MAX_UNBOUNDED_TAIL_CHARS} chars; "
+                "check for appended annexes or unrelated material."
+            )
+
+        text = parsed.full_text[match.start : next_start].rstrip()
+        end = match.start + len(text)
+        title = match.title or None
+        article_number = match.number
+        result.chunks.append(
+            ChunkDraft(
+                section_key=f"{doc_short_key}#art{article_number}",
+                parent_key=None,
+                path=[f"Article {article_number}", *([title] if title else [])],
+                heading=title,
+                text=text,
+                char_start=match.start,
+                char_end=end,
+                page_start=page_for_offset(parsed, match.start),
+                page_end=page_for_offset(parsed, max(end - 1, match.start)),
+            )
+        )
+    return result
+
+
+def _rule_heading_candidates(parsed: ParsedDocument, body_start: int) -> list[RuleHeading]:
+    """Map standalone rule headings from raw PDF lines to normalized-text offsets."""
+    headings: list[RuleHeading] = []
+    for page, page_offset in zip(parsed.pages, parsed.page_offsets, strict=True):
+        for raw_match in _RULE_START.finditer(page.raw_text):
+            # Whitespace normalization is length-changing. The cleaned raw prefix gives a
+            # stable lower bound for locating this heading in the normalized page text.
+            normalized_cursor = len(clean_page_text(page.raw_text[: raw_match.start()]))
+            normalized_match = _RULE_NUMBER.search(page.text, normalized_cursor)
+            if normalized_match is None:
+                continue
+            if normalized_match.group(1).casefold() != raw_match.group(1).casefold():
+                continue
+
+            title = next(
+                (
+                    " ".join(line.split()).strip(". ")
+                    for line in page.raw_text[raw_match.end() :].splitlines()
+                    if line.strip()
+                ),
+                None,
+            )
+            headings.append(
+                RuleHeading(
+                    number=raw_match.group(1),
+                    title=title,
+                    start=page_offset + normalized_match.start(),
+                    end=page_offset + normalized_match.end(),
+                )
+            )
+    return [heading for heading in headings if heading.start >= body_start]
+
+
+def _rule_heading_run(parsed: ParsedDocument, body_start: int) -> list[RuleHeading]:
+    """Return the longest increasing run of standalone Rule headings.
+
+    A few sources repeat headings in schedules or contain isolated line-wrapped
+    cross-references. The longest increasing subsequence favors the complete operative
+    rule sequence while preserving original offsets for the evidence contract.
+    """
+    candidates = _rule_heading_candidates(parsed, body_start)
+    if not candidates:
+        return []
+
+    lengths = [1] * len(candidates)
+    previous = [-1] * len(candidates)
+    for i, candidate in enumerate(candidates):
+        current = _sort_key(candidate.number)
+        for j in range(i):
+            prior = _sort_key(candidates[j].number)
+            if prior < current and lengths[j] + 1 > lengths[i]:
+                lengths[i] = lengths[j] + 1
+                previous[i] = j
+
+    # Prefer the later sequence when two runs have the same size; contents precede the
+    # operative text in some gazette PDFs.
+    end = max(range(len(candidates)), key=lambda index: (lengths[index], candidates[index].start))
+    run: list[RuleHeading] = []
+    while end >= 0:
+        run.append(candidates[end])
+        end = previous[end]
+    run.reverse()
+    return run
+
+
+def _chapter_offsets(parsed: ParsedDocument) -> list[int]:
+    offsets: list[int] = []
+    for page, page_offset in zip(parsed.pages, parsed.page_offsets, strict=True):
+        for raw_match in _CHAPTER_LINE.finditer(page.raw_text):
+            normalized_cursor = len(clean_page_text(page.raw_text[: raw_match.start()]))
+            normalized_match = _CHAPTER_HEADING.search(page.text, normalized_cursor)
+            if normalized_match:
+                offsets.append(page_offset + normalized_match.start())
+    return offsets
+
+
+def _chunk_rules(doc_short_key: str, parsed: ParsedDocument, body_start: int) -> ChunkingResult:
+    result = ChunkingResult()
+    matches = _rule_heading_run(parsed, body_start)
+    if len(matches) < 2:
+        return result
+
+    chapter_offsets = _chapter_offsets(parsed)
+    for index, match in enumerate(matches):
+        next_start = matches[index + 1].start if index + 1 < len(matches) else len(parsed.full_text)
+        # A chapter title belongs to neither adjacent rule. Stop the preceding rule before
+        # the chapter heading where one occurs between consecutive rules.
+        chapter_start = next(
+            (offset for offset in chapter_offsets if match.end < offset < next_start),
+            None,
+        )
+        if chapter_start is not None:
+            next_start = chapter_start
+
+        if index + 1 == len(matches) and next_start - match.end > MAX_UNBOUNDED_TAIL_CHARS:
+            next_start = match.end + MAX_UNBOUNDED_TAIL_CHARS
+            result.warnings.append(
+                f"{doc_short_key}: last rule {match.number} had an unbounded tail "
+                f"(no following rule found) — truncated at {MAX_UNBOUNDED_TAIL_CHARS} chars; "
+                "check for appended schedules or unrelated material."
+            )
+
+        raw_text = parsed.full_text[match.start : next_start]
+        left_trim = len(raw_text) - len(raw_text.lstrip())
+        text = raw_text.strip()
+        char_start = match.start + left_trim
+        char_end = char_start + len(text)
+
+        number = match.number
+        heading = match.title
+        result.chunks.append(
+            ChunkDraft(
+                section_key=f"{doc_short_key}#r{number}",
+                parent_key=None,
+                path=[f"Rule {number}", *([heading] if heading else [])],
+                heading=heading,
+                text=text,
+                char_start=char_start,
+                char_end=char_end,
+                page_start=page_for_offset(parsed, char_start),
+                page_end=page_for_offset(parsed, max(char_end - 1, char_start)),
+            )
+        )
+    return result
+
+
+def _chunk_by_page(doc_short_key: str, parsed: ParsedDocument) -> ChunkingResult:
+    """Keep unstructured notices searchable and citable instead of dropping them."""
+    result = ChunkingResult()
+    for page, page_offset in zip(parsed.pages, parsed.page_offsets, strict=True):
+        if not page.text:
+            continue
+        char_end = page_offset + len(page.text)
+        result.chunks.append(
+            ChunkDraft(
+                section_key=f"{doc_short_key}#p{page.printed_number}",
+                parent_key=None,
+                path=[f"Page {page.printed_number}"],
+                heading=None,
+                text=page.text,
+                char_start=page_offset,
+                char_end=char_end,
+                page_start=page.printed_number,
+                page_end=page.printed_number,
+            )
+        )
+    if result.chunks:
+        result.warnings.append(f"{doc_short_key}: no structural headings found; preserved text as page-level chunks.")
+    return result
+
+
+def chunk_document(doc_short_key: str, parsed: ParsedDocument, doc_type: str | None = None) -> ChunkingResult:
     result = ChunkingResult()
     full_text = parsed.full_text
     body_start = _find_body_start(full_text)
+
+    articles = _chunk_articles(doc_short_key, parsed)
+    if articles.chunks:
+        return articles
+    if _article_headings(parsed):
+        page_chunks = _chunk_by_page(doc_short_key, parsed)
+        page_chunks.warnings.insert(
+            0, f"{doc_short_key}: article headings are incomplete or out of reading order; review PDF layout."
+        )
+        return page_chunks
+
+    if doc_type == "rule":
+        rule_result = _chunk_rules(doc_short_key, parsed, body_start)
+        if rule_result.chunks:
+            return rule_result
 
     section_matches = sorted(
         [
@@ -272,7 +575,11 @@ def chunk_document(doc_short_key: str, parsed: ParsedDocument) -> ChunkingResult
         key=lambda m: m.start(),
     )
     if not section_matches:
-        result.warnings.append(f"{doc_short_key}: no section headings found after body start")
+        page_chunks = _chunk_by_page(doc_short_key, parsed)
+        if page_chunks.chunks:
+            page_chunks.warnings.insert(0, f"{doc_short_key}: no section headings found after body start.")
+            return page_chunks
+        result.warnings.append(f"{doc_short_key}: no section headings or searchable page text found")
         return result
 
     last_number = 0.0
@@ -303,18 +610,35 @@ def chunk_document(doc_short_key: str, parsed: ParsedDocument) -> ChunkingResult
 
     chapter_path, _ = _last_chapter_heading(full_text[body_start : section_matches[0].start()])
     chapter_path = chapter_path or []
+    seen_section_keys: set[str] = set()
 
     for i, m in enumerate(section_matches):
         num_raw = m.group(1)
         heading = m.group(2).strip().strip("[]") if len(m.groups()) > 1 else None
         sort_key = _sort_key(num_raw)
-        if sort_key < last_number:
+        base_section_key = f"{doc_short_key}#s{num_raw}"
+        repeated_section = base_section_key in seen_section_keys
+        if sort_key < last_number and not repeated_section:
             # Almost certainly a cross-reference ("section 3, 4 and 5") that slipped past
             # the anchor, not a real heading — skip it rather than emit a bogus section.
             continue
-        last_number = sort_key
+        if not repeated_section:
+            last_number = sort_key
 
-        section_key = f"{doc_short_key}#s{num_raw}"
+        section_key = base_section_key
+        if repeated_section:
+            duplicate_page = page_for_offset(parsed, m.start())
+            section_key = f"{base_section_key}-p{duplicate_page}"
+            duplicate_index = 2
+            while section_key in seen_section_keys:
+                section_key = f"{base_section_key}-p{duplicate_page}-{duplicate_index}"
+                duplicate_index += 1
+            result.warnings.append(
+                f"{doc_short_key}: repeated heading {base_section_key} on page "
+                f"{duplicate_page} was retained as {section_key}; inspect whether it is "
+                "operative text or a repeated schedule/contents entry."
+            )
+        seen_section_keys.add(section_key)
         is_last_match = i + 1 >= len(section_matches)
         next_start = section_matches[i + 1].start() if not is_last_match else len(full_text)
 
@@ -391,9 +715,7 @@ def chunk_document(doc_short_key: str, parsed: ParsedDocument) -> ChunkingResult
         for clause_key, clause_text, c_start, _c_end in clauses:
             label = clause_key[len(section_key) :]
             clause_path = [*path, f"clause {label}"]
-            main_text, children, edges = _split_proviso_and_explanation(
-                clause_key, clause_text, c_start
-            )
+            main_text, children, edges = _split_proviso_and_explanation(clause_key, clause_text, c_start)
 
             # One level of recursion: a numbered sub-section ("(1) … (a)(b)(c)") often has
             # its own lettered list — split that out too instead of storing it as one chunk.
@@ -419,9 +741,7 @@ def chunk_document(doc_short_key: str, parsed: ParsedDocument) -> ChunkingResult
             )
             for sub_key, sub_text, s_start, _s_end in sub_clauses:
                 sub_label = sub_key[len(clause_key) :]
-                sub_main, sub_children, sub_edges = _split_proviso_and_explanation(
-                    sub_key, sub_text, s_start
-                )
+                sub_main, sub_children, sub_edges = _split_proviso_and_explanation(sub_key, sub_text, s_start)
                 result.chunks.append(
                     ChunkDraft(
                         section_key=sub_key,
@@ -438,9 +758,7 @@ def chunk_document(doc_short_key: str, parsed: ParsedDocument) -> ChunkingResult
                 for sub_child in sub_children:
                     sub_child.path = [*clause_path, f"clause {sub_label}", sub_child.heading or ""]
                     sub_child.page_start = page_for_offset(parsed, sub_child.char_start)
-                    sub_child.page_end = page_for_offset(
-                        parsed, max(sub_child.char_end - 1, sub_child.char_start)
-                    )
+                    sub_child.page_end = page_for_offset(parsed, max(sub_child.char_end - 1, sub_child.char_start))
                     result.chunks.append(sub_child)
                 result.edges.extend(sub_edges)
 

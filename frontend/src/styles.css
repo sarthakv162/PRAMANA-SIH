@@ -1060,3 +1060,43 @@ input:not([type=checkbox]):not([type=radio]), textarea, select { font-size: 14px
   .nav-scrim { display: block; position: fixed; z-index: 29; inset: 0; width: 100%; height: 100%; border: 0; background: rgba(16,26,19,.24); backdrop-filter: blur(2px); }
   .eval-empty-panel { min-height: 150px; }
 }
+
+/* A bounded app viewport keeps navigation still while only the main pane scrolls. */
+@media (min-width: 641px) {
+  .app-shell { height:100dvh; min-height:0; overflow:hidden; }
+  .topbar,.below-topbar { flex-shrink:0; }
+  .app-body { min-height:0; overflow:hidden; }
+  .sidebar { height:100%; overflow-y:auto; }
+  .main-content { height:100%; overflow-y:auto; overscroll-behavior:contain; }
+}
+.history-panel { border:1px solid var(--line); border-radius:14px; padding:14px 18px; background:var(--paper); }
+.history-panel summary { cursor:pointer; color:var(--muted); font-size:13px; }
+.workspace-access { display:flex; flex-wrap:wrap; align-items:end; gap:10px; padding:14px 0; }
+.workspace-access label { flex:1; min-width:180px; }
+.workspace-access small { flex-basis:100%; color:var(--muted); }
+.history-actions { margin-bottom:8px; }
+.history-list { list-style:none; margin:0; padding:0; }
+.history-list li { display:flex; align-items:center; gap:12px; border-top:1px solid var(--line); padding:7px 0; }
+.history-list .text-button { text-align:left; flex:1; }
+.history-list small { color:var(--muted); }
+.wizard-fields { display:grid; gap:14px; margin:20px 0; }
+@media print { .app-shell,.app-body,.main-content { height:auto!important; overflow:visible!important; } .history-panel { display:none; } }
+
+/* Allow the complete date and controls to fit between desktop breakpoints. */
+.date-control { flex-shrink:0; min-width:144px; }
+@media (min-width: 641px) and (max-width: 1350px) {
+  .topbar { height:auto; min-height:76px; flex-wrap:wrap; padding-block:10px; }
+  .global-controls { order:3; flex-basis:100%; flex-wrap:wrap; }
+}
+
+/* Keep mobile controls and the composer in readable document flow. */
+@media (max-width: 640px) {
+  .topbar { position:static; }
+  .global-controls { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); overflow:visible; width:100%; gap:12px; }
+  .scope-control { grid-column:1/-1; min-width:0; }
+  .scope-control .control-group { justify-content:space-between; }
+  .compact-control { min-width:0; }
+  .compact-control input { min-width:0; width:100%; }
+  .ask-page { min-height:0; }
+  .composer-dock { position:static; margin-top:0; animation:none; }
+}

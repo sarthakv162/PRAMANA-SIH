@@ -20,13 +20,14 @@ ACT_ALIASES: dict[str, str] = {
     "the patents act": "patents_act_1970",
     "patents act, 1970": "patents_act_1970",
     "patents act 1970": "patents_act_1970",
-    "patents rules": "patents_rules_2003",
+    "patents rules": "patents_rules_2003_consolidated_2021",
     "biological diversity act": "biological_diversity_act_2002",
     "the biological diversity act": "biological_diversity_act_2002",
     "biological diversity act, 2002": "biological_diversity_act_2002",
     "biological diversity act 2002": "biological_diversity_act_2002",
     "biodiversity act": "biological_diversity_act_2002",
-    "drugs and cosmetics act": "drugs_and_cosmetics_act_1940",
+    "drugs and cosmetics act": "drugs_cosmetics_act_1940",
+    "drugs rules": "drugs_rules_1945_consolidated_2024",
 }
 
 _CLAUSE = r"\d+[A-Za-z]*(?:\([a-zA-Z0-9]+\))*"

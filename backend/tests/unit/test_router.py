@@ -17,6 +17,12 @@ def test_direct_citation_fast_path() -> None:
     assert section == "patents_act_1970#s3(p)"
 
 
+def test_traditional_knowledge_patenting_routes_to_patents_act_section_3p() -> None:
+    intent, section = router.route("Can traditional knowledge be patented in India?")
+    assert intent == "qa"
+    assert section == "patents_act_1970#s3(p)"
+
+
 def test_keyword_rule_classify() -> None:
     intent, _ = router.route("How do I classify my Ayurvedic formulation?")
     assert intent == "classify"

@@ -1,0 +1,55 @@
+{"query":"What does section 3(p) of the Patents Act say?","scope":"answerable","phrasing":"direct"}
+{"query":"Can traditional knowledge be patented in India?","scope":"answerable","phrasing":"direct"}
+{"query":"Is a mere admixture excluded from patenting?","scope":"answerable","phrasing":"direct"}
+{"query":"What is the patent term in India?","scope":"answerable","phrasing":"direct"}
+{"query":"What is a geographical indication?","scope":"answerable","phrasing":"direct"}
+{"query":"What is the procedure for trademark registration?","scope":"answerable","phrasing":"direct"}
+{"query":"Does the Biological Diversity Act govern foreign researchers?","scope":"answerable","phrasing":"direct"}
+{"query":"What are NBA access and benefit sharing obligations?","scope":"answerable","phrasing":"direct"}
+{"query":"What does TRIPS provide on patent rights?","scope":"answerable","phrasing":"direct"}
+{"query":"Explain Nagoya Protocol access requirements.","scope":"answerable","phrasing":"direct"}
+{"query":"What are the requirements for Ayurveda Aahara?","scope":"answerable","phrasing":"direct"}
+{"query":"What defines a phytopharmaceutical drug?","scope":"answerable","phrasing":"direct"}
+{"query":"How are Ayurvedic medicines licensed?","scope":"answerable","phrasing":"direct"}
+{"query":"What are prohibited therapeutic advertisements?","scope":"answerable","phrasing":"direct"}
+{"query":"What does the Convention on Biological Diversity cover?","scope":"answerable","phrasing":"direct"}
+{"query":"Can an old herbal recipe receive protection?","scope":"answerable","phrasing":"weak"}
+{"query":"I want to sell a botanical tablet. Which rules apply?","scope":"answerable","phrasing":"weak"}
+{"query":"Can I protect the brand name for my formulation?","scope":"answerable","phrasing":"weak"}
+{"query":"What permissions apply to commercial use of medicinal plants?","scope":"answerable","phrasing":"weak"}
+{"query":"How are benefits shared when plants are used commercially?","scope":"answerable","phrasing":"weak"}
+{"query":"What is needed before exporting an herbal preparation?","scope":"answerable","phrasing":"weak"}
+{"query":"Is an ancient medicinal recipe considered an invention?","scope":"answerable","phrasing":"weak"}
+{"query":"Does changing a known substance make it patentable?","scope":"answerable","phrasing":"weak"}
+{"query":"What must a product label disclose?","scope":"answerable","phrasing":"weak"}
+{"query":"Are there safety studies for a modified classical formulation?","scope":"answerable","phrasing":"weak"}
+{"query":"Who can manufacture Ayurveda products?","scope":"answerable","phrasing":"weak"}
+{"query":"Can a cosmetic claim to cure a disease?","scope":"answerable","phrasing":"weak"}
+{"query":"How do national rules interact with the biodiversity treaty?","scope":"answerable","phrasing":"weak"}
+{"query":"Could our startup mix two known plants and seek a patent?","scope":"answerable","phrasing":"indirect"}
+{"query":"Our product uses a traditional formula but we changed its dosage. What pathway applies?","scope":"answerable","phrasing":"indirect"}
+{"query":"An overseas laboratory wants to study Indian medicinal plants. Which approval framework applies?","scope":"answerable","phrasing":"indirect"}
+{"query":"We are making nutrition products from Ayurveda recipes. Which authority handles these?","scope":"answerable","phrasing":"indirect"}
+{"query":"Our herbal cream is sold for beautifying skin. Which product category is relevant?","scope":"answerable","phrasing":"indirect"}
+{"query":"A research team is transferring results about biological resources overseas. Which obligations apply?","scope":"answerable","phrasing":"indirect"}
+{"query":"Our extract is purified and contains four measured compounds. Which drug framework covers it?","scope":"answerable","phrasing":"indirect"}
+{"query":"What separates a classical remedy from a proprietary preparation?","scope":"answerable","phrasing":"indirect"}
+{"query":"We want to register a regional product name used by a community. What protection applies?","scope":"answerable","phrasing":"indirect"}
+{"query":"What permissions apply before overseas access to native biological resources?","scope":"answerable","phrasing":"indirect"}
+{"query":"Can a manufacturer advertise a cure for a scheduled disorder?","scope":"answerable","phrasing":"indirect"}
+{"query":"What does the biodiversity treaty say about conservation?","scope":"answerable","phrasing":"indirect"}
+{"query":"Explain the unindexed Designs Act packaging requirements.","scope":"in_scope_no_evidence","phrasing":"direct"}
+{"query":"What are PCT international filing fees?","scope":"in_scope_no_evidence","phrasing":"direct"}
+{"query":"Does the Madrid Protocol cover my brand?","scope":"in_scope_no_evidence","phrasing":"direct"}
+{"query":"How is the Hague system used for designs?","scope":"in_scope_no_evidence","phrasing":"direct"}
+{"query":"What does the Budapest Treaty say?","scope":"in_scope_no_evidence","phrasing":"direct"}
+{"query":"What does the Copyright Act require?","scope":"in_scope_no_evidence","phrasing":"direct"}
+{"query":"What are the unindexed plant variety rights requirements?","scope":"in_scope_no_evidence","phrasing":"weak"}
+{"query":"How is secret manufacturing know-how protected?","scope":"in_scope_no_evidence","phrasing":"weak"}
+{"query":"What is the weather in Delhi?","scope":"out_of_domain","phrasing":"direct"}
+{"query":"Will it rain tomorrow?","scope":"out_of_domain","phrasing":"weak"}
+{"query":"What is the capital of France?","scope":"out_of_domain","phrasing":"direct"}
+{"query":"Write me a poem about Ayurveda.","scope":"out_of_domain","phrasing":"direct"}
+{"query":"What is today's football score?","scope":"out_of_domain","phrasing":"direct"}
+{"query":"Give me a recipe for dinner.","scope":"out_of_domain","phrasing":"weak"}
+{"query":"What is the Bitcoin price?","scope":"out_of_domain","phrasing":"direct"}

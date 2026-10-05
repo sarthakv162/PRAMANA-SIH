@@ -62,8 +62,6 @@ def verify_proof(leaf_hash: str, proof: list[ProofStep], root: str) -> bool:
     current = leaf_hash
     for step in proof:
         current = (
-            _hash_pair(step.sibling_hash, current)
-            if step.sibling_is_left
-            else _hash_pair(current, step.sibling_hash)
+            _hash_pair(step.sibling_hash, current) if step.sibling_is_left else _hash_pair(current, step.sibling_hash)
         )
     return current == root

@@ -23,5 +23,6 @@ export function useQuerySSE() {
   }, []);
 
   const cancel = useCallback(() => { controller.current?.abort(); setIsLoading(false); }, []);
-  return { result, stages, error, isLoading, run, cancel };
+  const clearStatus = useCallback(() => { setError(''); setStages({}); }, []);
+  return { result, stages, error, isLoading, run, cancel, clearStatus };
 }

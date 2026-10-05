@@ -29,9 +29,7 @@ _escalations_table = sa.Table(
     sa.Column("created_at", sa.DateTime(timezone=True)),
 )
 
-_requests_table = sa.Table(
-    "requests", sa.MetaData(), sa.Column("id", UUID(as_uuid=True), primary_key=True)
-)
+_requests_table = sa.Table("requests", sa.MetaData(), sa.Column("id", UUID(as_uuid=True), primary_key=True))
 
 
 def _ticket_id(escalation_id: uuid.UUID) -> str:
@@ -51,9 +49,7 @@ def create_escalation(session: Session, request: EscalationRequest) -> Escalatio
             status_code=400,
         ) from exc
 
-    exists = session.execute(
-        sa.select(_requests_table.c.id).where(_requests_table.c.id == request_uuid)
-    ).first()
+    exists = session.execute(sa.select(_requests_table.c.id).where(_requests_table.c.id == request_uuid)).first()
     if exists is None:
         raise ApiError(
             code="request_not_found",
@@ -77,9 +73,7 @@ def create_escalation(session: Session, request: EscalationRequest) -> Escalatio
 
 
 def list_escalations(session: Session) -> list[dict[str, Any]]:
-    rows = session.execute(
-        sa.select(_escalations_table).order_by(_escalations_table.c.created_at.desc())
-    ).all()
+    rows = session.execute(sa.select(_escalations_table).order_by(_escalations_table.c.created_at.desc())).all()
     return [
         {
             "ticket_id": _ticket_id(row.id),

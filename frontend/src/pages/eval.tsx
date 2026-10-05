@@ -21,6 +21,7 @@ export function EvalPage() {
         <div className="eval-run-heading"><span className="eyebrow">{t('latestRun').toUpperCase()}</span><h2>{result.run_id}</h2></div>
         <div className="eval-metadata"><span><b>{t('questions')}</b>{result.n_questions}</span><span><b>{t('conditions')}</b>{result.conditions.length}</span><span><b>{t('version')}</b>{result.corpus_version}</span><span><b>{t('generated')}</b>{new Date(result.generated_at).toLocaleString()}</span></div>
       </Panel>
+      {result.method && <p className="small-muted">{result.method}</p>}
       {result.conditions.length > 0 ? <Panel className="eval-table-panel">
         <div className="section-title"><div><span className="eyebrow">{result.conditions.length} {t('conditions').toLowerCase()}</span><h2>{t('conditions')}</h2></div><span className="small-muted">{t('questions')}: {result.n_questions}</span></div>
         <div className="table-scroll"><table><thead><tr><th scope="col">{t('conditions')}</th><th scope="col">{t('citationPrecision')}</th><th scope="col">{t('citationRecall')}</th><th scope="col">{t('faithfulness')}</th><th scope="col">{t('abstentionAccuracy')}</th><th scope="col">{t('leaks')}</th></tr></thead><tbody>{result.conditions.map((row) => <tr key={row.name}><th scope="row">{row.name}</th><td>{formatRate(row.citation_precision)}</td><td>{formatRate(row.citation_recall)}</td><td>{formatRate(row.faithfulness)}</td><td>{formatRate(row.abstention_accuracy)}</td><td>{row.jurisdiction_leaks}</td></tr>)}</tbody></table></div>

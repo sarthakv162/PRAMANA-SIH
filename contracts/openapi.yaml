@@ -24,12 +24,20 @@ paths:
       - query
       summary: Query
       operationId: query_v1_query_post
+      parameters:
+      - name: x-demo-key
+        in: header
+        required: false
+        schema:
+          type: string
+          default: ''
+          title: X-Demo-Key
       requestBody:
+        required: true
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/QueryRequest'
-        required: true
       responses:
         '200':
           description: 'Server-sent events: stage, result or error, then done.'
@@ -37,6 +45,300 @@ paths:
             text/event-stream:
               schema:
                 type: string
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /v1/conversations:
+    post:
+      tags:
+      - history
+      summary: Create
+      operationId: create_v1_conversations_post
+      parameters:
+      - name: x-demo-key
+        in: header
+        required: false
+        schema:
+          type: string
+          default: ''
+          title: X-Demo-Key
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConversationCreate'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConversationSummary'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    get:
+      tags:
+      - history
+      summary: List Saved
+      operationId: list_saved_v1_conversations_get
+      parameters:
+      - name: x-demo-key
+        in: header
+        required: false
+        schema:
+          type: string
+          default: ''
+          title: X-Demo-Key
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ConversationSummary'
+                title: Response List Saved V1 Conversations Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /v1/conversations/{conversation_id}:
+    get:
+      tags:
+      - history
+      summary: Detail
+      operationId: detail_v1_conversations__conversation_id__get
+      parameters:
+      - name: conversation_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Conversation Id
+      - name: x-demo-key
+        in: header
+        required: false
+        schema:
+          type: string
+          default: ''
+          title: X-Demo-Key
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConversationDetail'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    delete:
+      tags:
+      - history
+      summary: Delete
+      operationId: delete_v1_conversations__conversation_id__delete
+      parameters:
+      - name: conversation_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Conversation Id
+      - name: x-demo-key
+        in: header
+        required: false
+        schema:
+          type: string
+          default: ''
+          title: X-Demo-Key
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /v1/requests/{request_id}:
+    get:
+      tags:
+      - history
+      summary: Result
+      operationId: result_v1_requests__request_id__get
+      parameters:
+      - name: request_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Request Id
+      - name: x-demo-key
+        in: header
+        required: false
+        schema:
+          type: string
+          default: ''
+          title: X-Demo-Key
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SavedResult'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /v1/case-file:
+    get:
+      tags:
+      - history
+      summary: Case File
+      operationId: case_file_v1_case_file_get
+      parameters:
+      - name: x-demo-key
+        in: header
+        required: false
+        schema:
+          type: string
+          default: ''
+          title: X-Demo-Key
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CaseRef'
+                title: Response Case File V1 Case File Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    put:
+      tags:
+      - history
+      summary: Case Order
+      operationId: case_order_v1_case_file_put
+      parameters:
+      - name: x-demo-key
+        in: header
+        required: false
+        schema:
+          type: string
+          default: ''
+          title: X-Demo-Key
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CaseOrder'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CaseRef'
+                title: Response Case Order V1 Case File Put
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /v1/case-file/{request_id}:
+    post:
+      tags:
+      - history
+      summary: Case Add
+      operationId: case_add_v1_case_file__request_id__post
+      parameters:
+      - name: request_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Request Id
+      - name: x-demo-key
+        in: header
+        required: false
+        schema:
+          type: string
+          default: ''
+          title: X-Demo-Key
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CaseRef'
+                title: Response Case Add V1 Case File  Request Id  Post
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    delete:
+      tags:
+      - history
+      summary: Case Remove
+      operationId: case_remove_v1_case_file__request_id__delete
+      parameters:
+      - name: request_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Request Id
+      - name: x-demo-key
+        in: header
+        required: false
+        schema:
+          type: string
+          default: ''
+          title: X-Demo-Key
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CaseRef'
+                title: Response Case Remove V1 Case File  Request Id  Delete
         '422':
           description: Validation Error
           content:
@@ -152,12 +454,20 @@ paths:
       - dossier
       summary: Build Dossier
       operationId: build_dossier_v1_dossier_post
+      parameters:
+      - name: x-demo-key
+        in: header
+        required: false
+        schema:
+          type: string
+          default: ''
+          title: X-Demo-Key
       requestBody:
+        required: true
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/DossierRequest'
-        required: true
       responses:
         '200':
           description: Successful Response
@@ -222,6 +532,14 @@ paths:
         schema:
           type: string
           title: Doc Id
+      - name: corpus_version
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Corpus Version
       responses:
         '200':
           description: Successful Response
@@ -276,6 +594,21 @@ paths:
                   $ref: '#/components/schemas/CorpusVersionInfo'
                 type: array
                 title: Response List Corpus Versions V1 Corpus Versions Get
+  /v1/corpus/coverage:
+    get:
+      tags:
+      - corpus
+      summary: Source Coverage
+      operationId: source_coverage_v1_corpus_coverage_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                type: object
+                title: Response Source Coverage V1 Corpus Coverage Get
   /v1/receipts/{receipt_id}:
     get:
       tags:
@@ -358,6 +691,8 @@ paths:
       tags:
       - speech
       summary: Speech Tts
+      description: Read up to 2,500 characters using Sarvam. Requires a server-side
+        API key.
       operationId: speech_tts_v1_speech_tts_post
       requestBody:
         content:
@@ -369,8 +704,10 @@ paths:
         '200':
           description: Successful Response
           content:
-            application/json:
-              schema: {}
+            audio/wav:
+              schema:
+                type: string
+                format: binary
         '422':
           description: Validation Error
           content:
@@ -474,10 +811,14 @@ components:
           - type: 'null'
           title: Form
         required:
-          type: boolean
+          anyOf:
+          - type: boolean
+          - type: 'null'
           title: Required
         exempt:
-          type: boolean
+          anyOf:
+          - type: boolean
+          - type: 'null'
           title: Exempt
         exempt_reason:
           anyOf:
@@ -530,6 +871,7 @@ components:
           items:
             $ref: '#/components/schemas/AbsActivity'
           type: array
+          minItems: 1
           title: Activity
         resources:
           items:
@@ -544,6 +886,7 @@ components:
         as_of:
           anyOf:
           - type: string
+            format: date
           - type: 'null'
           title: As Of
         language:
@@ -588,6 +931,13 @@ components:
         summary:
           type: string
           title: Summary
+        assessment_status:
+          type: string
+          enum:
+          - unassessed
+          - provisional
+          title: Assessment Status
+          default: unassessed
         checklist:
           items:
             $ref: '#/components/schemas/AbsChecklistItem'
@@ -634,10 +984,44 @@ components:
           type: string
           contentMediaType: application/octet-stream
           title: Audio
+        language:
+          $ref: '#/components/schemas/Language'
+          default: auto
       type: object
       required:
       - audio
       title: Body_speech_asr_v1_speech_asr_post
+    CaseOrder:
+      properties:
+        request_ids:
+          items:
+            type: string
+          type: array
+          title: Request Ids
+      additionalProperties: false
+      type: object
+      required:
+      - request_ids
+      title: CaseOrder
+    CaseRef:
+      properties:
+        request_id:
+          type: string
+          title: Request Id
+        summary:
+          type: string
+          title: Summary
+        receipt_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Receipt Id
+      additionalProperties: false
+      type: object
+      required:
+      - request_id
+      - summary
+      title: CaseRef
     ClassifyCategory:
       type: string
       enum:
@@ -700,6 +1084,7 @@ components:
         as_of:
           anyOf:
           - type: string
+            format: date
           - type: 'null'
           title: As Of
         language:
@@ -715,6 +1100,22 @@ components:
           const: result
           title: Type
           default: result
+        status:
+          type: string
+          enum:
+          - provisional
+          - draft
+          title: Status
+          default: provisional
+        review_recommended:
+          type: boolean
+          title: Review Recommended
+          default: true
+        missing_information:
+          items:
+            type: string
+          type: array
+          title: Missing Information
         category:
           $ref: '#/components/schemas/ClassifyCategory'
         category_label:
@@ -751,6 +1152,90 @@ components:
       - evidence
       - receipt_id
       title: ClassifyResult
+    ConversationCreate:
+      properties:
+        title:
+          type: string
+          maxLength: 200
+          title: Title
+          default: New conversation
+      additionalProperties: false
+      type: object
+      title: ConversationCreate
+    ConversationDetail:
+      properties:
+        id:
+          type: string
+          format: uuid
+          title: Id
+        title:
+          type: string
+          title: Title
+        workspace_id:
+          type: string
+          title: Workspace Id
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        updated_at:
+          type: string
+          format: date-time
+          title: Updated At
+        expires_at:
+          type: string
+          format: date-time
+          title: Expires At
+        messages:
+          items:
+            $ref: '#/components/schemas/SavedMessage'
+          type: array
+          title: Messages
+      additionalProperties: false
+      type: object
+      required:
+      - id
+      - title
+      - workspace_id
+      - created_at
+      - updated_at
+      - expires_at
+      - messages
+      title: ConversationDetail
+    ConversationSummary:
+      properties:
+        id:
+          type: string
+          format: uuid
+          title: Id
+        title:
+          type: string
+          title: Title
+        workspace_id:
+          type: string
+          title: Workspace Id
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        updated_at:
+          type: string
+          format: date-time
+          title: Updated At
+        expires_at:
+          type: string
+          format: date-time
+          title: Expires At
+      additionalProperties: false
+      type: object
+      required:
+      - id
+      - title
+      - workspace_id
+      - created_at
+      - updated_at
+      - expires_at
+      title: ConversationSummary
     CorpusVersionInfo:
       properties:
         label:
@@ -1021,6 +1506,11 @@ components:
         n_questions:
           type: integer
           title: N Questions
+        method:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Method
         conditions:
           items:
             $ref: '#/components/schemas/EvalCondition'
@@ -1226,6 +1716,22 @@ components:
           title: Corpus Version
         models:
           $ref: '#/components/schemas/ModelsStatus'
+        corpus_embedding_compatible:
+          type: boolean
+          title: Corpus Embedding Compatible
+          default: false
+        memory_budget_gb:
+          type: integer
+          title: Memory Budget Gb
+          default: 12
+        speech_asr_available:
+          type: boolean
+          title: Speech Asr Available
+          default: false
+        public_demo_mode:
+          type: boolean
+          title: Public Demo Mode
+          default: false
       additionalProperties: false
       type: object
       required:
@@ -1386,6 +1892,18 @@ components:
         nli:
           type: string
           title: Nli
+        llm_ready:
+          type: boolean
+          title: Llm Ready
+          default: false
+        embed_ready:
+          type: boolean
+          title: Embed Ready
+          default: false
+        nli_ready:
+          type: boolean
+          title: Nli Ready
+          default: false
       additionalProperties: false
       type: object
       required:
@@ -1430,6 +1948,11 @@ components:
           const: patent_risk
           title: Type
           default: patent_risk
+        assessment_status:
+          type: string
+          const: draft
+          title: Assessment Status
+          default: draft
         gauge:
           $ref: '#/components/schemas/Risk'
         score:
@@ -1625,6 +2148,8 @@ components:
       properties:
         query:
           type: string
+          maxLength: 6000
+          minLength: 1
           title: Query
         jurisdiction:
           $ref: '#/components/schemas/Jurisdiction'
@@ -1658,6 +2183,32 @@ components:
       required:
       - query
       title: QueryRequest
+    QuestionField:
+      properties:
+        id:
+          type: string
+          title: Id
+        label:
+          type: string
+          title: Label
+        kind:
+          $ref: '#/components/schemas/InputKind'
+        options:
+          items:
+            $ref: '#/components/schemas/InputOption'
+          type: array
+          title: Options
+        required:
+          type: boolean
+          title: Required
+          default: true
+      additionalProperties: false
+      type: object
+      required:
+      - id
+      - label
+      - kind
+      title: QuestionField
     QuestionInput:
       properties:
         kind:
@@ -1667,6 +2218,11 @@ components:
             $ref: '#/components/schemas/InputOption'
           type: array
           title: Options
+        fields:
+          items:
+            $ref: '#/components/schemas/QuestionField'
+          type: array
+          title: Fields
       additionalProperties: false
       type: object
       required:
@@ -1829,6 +2385,79 @@ components:
       - coverage
       - risk
       title: RiskCoveragePoint
+    SavedMessage:
+      properties:
+        id:
+          type: string
+          format: uuid
+          title: Id
+        role:
+          type: string
+          enum:
+          - user
+          - assistant
+          title: Role
+        content:
+          type: string
+          title: Content
+        request_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Request Id
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        result:
+          anyOf:
+          - additionalProperties: true
+            type: object
+          - type: 'null'
+          title: Result
+      additionalProperties: false
+      type: object
+      required:
+      - id
+      - role
+      - content
+      - created_at
+      title: SavedMessage
+    SavedResult:
+      properties:
+        request_id:
+          type: string
+          title: Request Id
+        conversation_id:
+          anyOf:
+          - type: string
+            format: uuid
+          - type: 'null'
+          title: Conversation Id
+        result:
+          additionalProperties: true
+          type: object
+          title: Result
+        receipt_id:
+          type: string
+          title: Receipt Id
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        expires_at:
+          type: string
+          format: date-time
+          title: Expires At
+      additionalProperties: false
+      type: object
+      required:
+      - request_id
+      - result
+      - receipt_id
+      - created_at
+      - expires_at
+      title: SavedResult
     SpanVerification:
       properties:
         evidence_id:
@@ -1868,6 +2497,8 @@ components:
       properties:
         text:
           type: string
+          maxLength: 2500
+          minLength: 1
           title: Text
         language:
           $ref: '#/components/schemas/Language'

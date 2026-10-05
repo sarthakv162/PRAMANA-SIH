@@ -10,13 +10,15 @@ from dataclasses import dataclass, field
 from datetime import date
 from pathlib import Path
 from typing import Any
+from urllib.parse import quote
 
+import sqlalchemy as sa
 import yaml
 from sqlalchemy.orm import Session
 
 from app.retrieval import repo
 from app.retrieval.evidence_pack import stable_evidence_id
-from app.schemas.evidence import EvidenceSpan
+from app.schemas.evidence import EvidenceSpan, Highlight
 
 TREES_DIR = Path(__file__).parent / "trees"
 
@@ -114,6 +116,7 @@ def resolve_citations(
     corpus_version_label: str,
     jurisdictions: list[str],
     as_of: date,
+    include_descendants: bool = False,
 ) -> tuple[dict[str, EvidenceSpan], dict[str, str]]:
     """Resolve rule-tree `cite` section_keys to real `EvidenceSpan`s — through the same
     jurisdiction/as-of gate as any other evidence (§6.4 "cite-resolution" step). A section_key
@@ -126,6 +129,22 @@ def resolve_citations(
     """
     evidence: dict[str, EvidenceSpan] = {}
     chunk_id_by_evidence_id: dict[str, str] = {}
+    if include_descendants and section_keys:
+        predicates = [
+            sa.or_(
+                repo.sections.c.section_key == key,
+                repo.sections.c.section_key.startswith(key + "("),
+                repo.sections.c.section_key.startswith(key + "-"),
+            )
+            for key in section_keys
+        ]
+        section_keys = list(
+            session.execute(
+                sa.select(repo.sections.c.section_key)
+                .where(repo.sections.c.corpus_version_id == corpus_version_id, sa.or_(*predicates))
+                .order_by(repo.sections.c.section_key)
+            ).scalars()
+        )
     for key in section_keys:
         section = repo.fetch_section_by_key(session, key, corpus_version_id)
         if section is None:
@@ -137,6 +156,7 @@ def resolve_citations(
             document = repo.fetch_document(session, str(section.document_id))
             if document is None:
                 continue
+            artifact = repo.document_artifact(session, document.short_key, corpus_version_label)
             ev_id = stable_evidence_id(str(chunk.id), chunk.char_start, chunk.char_end)
             evidence[ev_id] = EvidenceSpan(
                 id=ev_id,
@@ -144,7 +164,7 @@ def resolve_citations(
                 doc_title=document.title,
                 doc_type=chunk.doc_type,
                 jurisdiction=chunk.jurisdiction,
-                citation_label=f"{document.title} — {key.split('#s')[-1]}",
+                citation_label=f"{document.title} — {section.section_key.split('#', 1)[-1]}",
                 section_key=section.section_key,
                 section_path=list(section.path or []),
                 page=chunk.page or 0,
@@ -156,8 +176,9 @@ def resolve_citations(
                 effective_from=chunk.effective_from,
                 effective_to=chunk.effective_to,
                 corpus_version=corpus_version_label,
-                source_url=document.source_url,
-                pdf_url=f"/v1/documents/{document.short_key}/pdf",
+                source_url=artifact["source_url"] if artifact else document.source_url,
+                pdf_url=f"/v1/documents/{document.short_key}/pdf?corpus_version={quote(corpus_version_label)}",
+                highlights=[Highlight(**h) for h in (chunk.bboxes or [])],
             )
             chunk_id_by_evidence_id[ev_id] = str(chunk.id)
     return evidence, chunk_id_by_evidence_id

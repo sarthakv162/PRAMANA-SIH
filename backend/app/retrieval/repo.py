@@ -13,6 +13,7 @@ statements — rather than full ORM models.
 
 from __future__ import annotations
 
+import re
 from datetime import date
 from typing import Any
 
@@ -32,6 +33,7 @@ corpus_versions = sa.Table(
     sa.Column("merkle_root", sa.Text),
     sa.Column("created_at", sa.DateTime(timezone=True)),
     sa.Column("notes", sa.Text),
+    sa.Column("embedding_model", sa.Text),
 )
 
 documents = sa.Table(
@@ -106,6 +108,7 @@ def retrievable_chunks(
     jurisdictions: list[str],
     as_of: date,
     doc_types: list[str] | None = None,
+    doc_keys: list[str] | None = None,
 ) -> sa.Select[Any]:
     """The one predicate every chunk search composes on (§6.5).
 
@@ -120,6 +123,14 @@ def retrievable_chunks(
     )
     if doc_types:
         stmt = stmt.where(chunks.c.doc_type.in_(doc_types))
+    if doc_keys is not None:
+        stmt = stmt.where(
+            chunks.c.section_id.in_(
+                sa.select(sections.c.id)
+                .join(documents, sections.c.document_id == documents.c.id)
+                .where(documents.c.short_key.in_(doc_keys))
+            )
+        )
     return stmt
 
 
@@ -135,9 +146,7 @@ def live_corpus_version(session: Session) -> tuple[str, str] | None:
 
 
 def corpus_version_by_label(session: Session, label: str) -> str | None:
-    row = session.execute(
-        sa.select(corpus_versions.c.id).where(corpus_versions.c.label == label)
-    ).first()
+    row = session.execute(sa.select(corpus_versions.c.id).where(corpus_versions.c.label == label)).first()
     return str(row.id) if row else None
 
 
@@ -167,14 +176,58 @@ def fetch_sections_by_ids(session: Session, section_ids: list[str]) -> list[sa.R
     return list(session.execute(stmt).all())
 
 
-def fetch_section_by_key(
-    session: Session, section_key: str, corpus_version_id: str
-) -> sa.Row[Any] | None:
+def ancestor_section_ids(
+    session: Session, section_ids: list[str], corpus_version_id: str, max_depth: int = 4
+) -> list[str]:
+    """Return parent IDs for retrieved clause/subsection rows.
+
+    Clause text can omit its parent's introductory language (for example, a clause defines
+    what kind of "invention" it is while the section heading says those things "are not
+    inventions"). Retrieval needs that heading as context for generation and verification.
+    """
+    visited = set(section_ids)
+    frontier = set(section_ids)
+    ancestors: set[str] = set()
+    for _ in range(max_depth):
+        if not frontier:
+            break
+        stmt = sa.select(sections.c.id, sections.c.parent_id).where(
+            sections.c.id.in_(frontier),
+            sections.c.corpus_version_id == corpus_version_id,
+        )
+        next_frontier = {
+            str(row.parent_id)
+            for row in session.execute(stmt).all()
+            if row.parent_id is not None and str(row.parent_id) not in visited
+        }
+        visited.update(next_frontier)
+        ancestors.update(next_frontier)
+        frontier = next_frontier
+    return sorted(ancestors)
+
+
+def fetch_section_by_key(session: Session, section_key: str, corpus_version_id: str) -> sa.Row[Any] | None:
     stmt = sa.select(sections).where(
         sections.c.section_key == section_key,
         sections.c.corpus_version_id == corpus_version_id,
     )
-    return session.execute(stmt).first()
+    row = session.execute(stmt).first()
+    if row is not None or "#s" not in section_key:
+        return row
+    # Older rule parsers used section-style keys; newer rule headings use #r. Resolve
+    # only an actual rule document and retain the database's canonical citation key.
+    doc_key, suffix = section_key.split("#s", 1)
+    alternate = (
+        sa.select(sections)
+        .join(documents, sections.c.document_id == documents.c.id)
+        .where(
+            sections.c.section_key == f"{doc_key}#r{suffix}",
+            sections.c.corpus_version_id == corpus_version_id,
+            documents.c.short_key == doc_key,
+            documents.c.doc_type == "rule",
+        )
+    )
+    return session.execute(alternate).first()
 
 
 def fetch_chunks_for_section(
@@ -208,14 +261,15 @@ def dense_search(
     query_vector: list[float],
     top_n: int = 40,
     doc_types: list[str] | None = None,
+    doc_keys: list[str] | None = None,
 ) -> list[tuple[sa.Row[Any], float]]:
-    """Cosine-similarity search over `chunks.embedding` (BGE-M3, HNSW index, §6.5).
+    """Cosine-similarity search over compatible versioned Qwen embeddings (HNSW index).
 
     Returns `(row, similarity)` pairs, `similarity` in [-1, 1] (1 = identical), ranked
     descending. `cosine_distance` is `1 - cosine_similarity`, so we sort by it ascending and
     report the similarity back to the caller for confidence scoring (§6.7).
     """
-    base = retrievable_chunks(corpus_version_id, jurisdictions, as_of, doc_types)
+    base = retrievable_chunks(corpus_version_id, jurisdictions, as_of, doc_types, doc_keys)
     distance = chunks.c.embedding.cosine_distance(query_vector)
     stmt = base.add_columns(distance.label("distance")).order_by(distance).limit(top_n)
     rows = session.execute(stmt).all()
@@ -230,19 +284,27 @@ def keyword_search(
     tsquery: str,
     top_n: int = 40,
     doc_types: list[str] | None = None,
+    doc_keys: list[str] | None = None,
 ) -> list[tuple[sa.Row[Any], float]]:
     """Full-text search over `chunks.tsv` via `websearch_to_tsquery('english', …)` (§6.5).
 
     `tsquery` is the raw user/query text; Postgres does the query-string parsing. Returns
     `(row, ts_rank)` pairs ranked descending.
     """
-    base = retrievable_chunks(corpus_version_id, jurisdictions, as_of, doc_types)
-    query = sa.func.websearch_to_tsquery("english", tsquery)
-    rank = sa.func.ts_rank(chunks.c.tsv, query)
+    base = retrievable_chunks(corpus_version_id, jurisdictions, as_of, doc_types, doc_keys)
+    words = re.findall(r"\w+", tsquery)
+    if not words:
+        return []
+    exact = sa.func.websearch_to_tsquery("english", tsquery)
+    # Natural questions rarely put all their lexemes in a single legal clause. Prefer
+    # exact matches, then rank relaxed matches by proximity with document-length
+    # normalization. Bound, quoted words keep operators/punctuation out of the query.
+    query = sa.func.websearch_to_tsquery("english", " OR ".join(f'"{word}"' for word in words))
+    rank = sa.func.ts_rank_cd(chunks.c.tsv, query, 2)
     stmt = (
         base.add_columns(rank.label("rank"))
         .where(chunks.c.tsv.op("@@")(query))
-        .order_by(rank.desc())
+        .order_by(chunks.c.tsv.op("@@")(exact).desc(), rank.desc())
         .limit(top_n)
     )
     rows = session.execute(stmt).all()
@@ -256,6 +318,7 @@ def trigram_search(
     as_of: date,
     text: str,
     top_n: int = 10,
+    doc_keys: list[str] | None = None,
 ) -> list[tuple[sa.Row[Any], float]]:
     """Trigram match on `sections.section_key`/`heading` (§6.5) — finds "3(p)"-style queries
     that `websearch_to_tsquery` tokenises badly. Joins through `sections` but still gates on
@@ -266,7 +329,7 @@ def trigram_search(
         sa.func.similarity(sa.func.coalesce(sections.c.heading, ""), text),
     )
     eligible_sections = (
-        retrievable_chunks(corpus_version_id, jurisdictions, as_of)
+        retrievable_chunks(corpus_version_id, jurisdictions, as_of, doc_keys=doc_keys)
         .with_only_columns(chunks.c.section_id)
         .distinct()
         .subquery()
@@ -284,7 +347,7 @@ def trigram_search(
     if not matched_sections:
         return []
     sim_by_section = {str(r.id): r.similarity for r in matched_sections}
-    base = retrievable_chunks(corpus_version_id, jurisdictions, as_of)
+    base = retrievable_chunks(corpus_version_id, jurisdictions, as_of, doc_keys=doc_keys)
     stmt = base.where(chunks.c.section_id.in_(sim_by_section.keys()))
     rows = session.execute(stmt).all()
     return [(row, float(sim_by_section[str(row.section_id)])) for row in rows]
@@ -304,7 +367,7 @@ def fetch_chunks_for_sections(
     return list(session.execute(stmt).all())
 
 
-def all_chunks_ordered(session: Session, corpus_version_id: str) -> list[sa.Row[Any]]:
+def all_chunks_ordered(session: Session, corpus_version_id: str) -> list[sa.Row[Any, Any]]:
     """Every chunk in a corpus version, in a fixed deterministic order (by id).
 
     This is the Merkle tree's leaf order (§6.9) — `ingest/versions.py::promote` and
@@ -333,7 +396,7 @@ def find_chunk_by_evidence_id(
     return None
 
 
-def chunk_current_text_and_id(session: Session, chunk_id: str) -> sa.Row[Any] | None:
+def chunk_current_text_and_id(session: Session, chunk_id: str) -> sa.Row[Any, Any, Any] | None:
     stmt = sa.select(chunks.c.id, chunks.c.text, chunks.c.section_id).where(chunks.c.id == chunk_id)
     return session.execute(stmt).first()
 
@@ -366,3 +429,46 @@ def graph_expand(
         reached |= next_frontier
         frontier = next_frontier
     return list(reached)
+
+
+def embedding_model_for_version(session: Session, version_id: str) -> str | None:
+    return session.execute(
+        sa.select(corpus_versions.c.embedding_model).where(corpus_versions.c.id == version_id)
+    ).scalar_one_or_none()
+
+
+def documents_for_version(session: Session, version_id: str) -> list[Any]:
+    return list(
+        session.execute(
+            sa.select(documents).where(
+                documents.c.id.in_(sa.select(sections.c.document_id).where(sections.c.corpus_version_id == version_id))
+            )
+        ).all()
+    )
+
+
+document_versions = sa.Table(
+    "document_versions",
+    metadata,
+    sa.Column("document_id", sa.Uuid(as_uuid=False), primary_key=True),
+    sa.Column("corpus_version_id", sa.Uuid(as_uuid=False), primary_key=True),
+    sa.Column("pdf_path", sa.Text),
+    sa.Column("file_sha256", sa.Text),
+    sa.Column("source_url", sa.Text),
+)
+
+
+def document_artifact(session: Session, doc_key: str, version_label: str) -> Any:
+    return (
+        session.execute(
+            sa.select(document_versions.c.pdf_path, document_versions.c.file_sha256, document_versions.c.source_url)
+            .select_from(
+                document_versions.join(documents, document_versions.c.document_id == documents.c.id).join(
+                    corpus_versions, document_versions.c.corpus_version_id == corpus_versions.c.id
+                )
+            )
+            .where(documents.c.short_key == doc_key, corpus_versions.c.label == version_label)
+        )
+        .mappings()
+        .first()
+    )

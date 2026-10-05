@@ -32,9 +32,7 @@ ingest_engine = create_engine(
     pool_pre_ping=True,
     future=True,
 )
-IngestSessionLocal = sessionmaker(
-    bind=ingest_engine, autoflush=False, autocommit=False, future=True
-)
+IngestSessionLocal = sessionmaker(bind=ingest_engine, autoflush=False, autocommit=False, future=True)
 
 
 @contextmanager

@@ -1,46 +1,60 @@
-"""Dense embeddings — BGE-M3, 1024-d (§6.5, §6.13 `EMBED_MODEL`).
-
-The model is loaded lazily and cached process-wide: it's a ~2GB checkpoint, so importing this
-module must not pay that cost, and nothing should reload it per request. `EMBEDDER=api` is
-reserved for a hosted-embedding fallback (§12 "compute limits on hosting") and isn't
-implemented yet — the prototype runs the model locally.
-"""
+"""Qwen3 multilingual embeddings through native, local Ollama (1024 dimensions)."""
 
 from __future__ import annotations
 
-from functools import lru_cache
-from typing import TYPE_CHECKING
+import math
+
+import httpx
 
 from app.config import get_settings
+from app.generation.llm import INFERENCE_LOCK
 
-if TYPE_CHECKING:
-    from sentence_transformers import SentenceTransformer
+EMBED_BATCH_SIZE = 4
+EMBED_DIMENSIONS = 1024
 
 
-@lru_cache
-def _model() -> SentenceTransformer:
-    settings = get_settings()
-    if settings.embedder != "local":
-        raise NotImplementedError(
-            f"EMBEDDER={settings.embedder!r} is not implemented; only 'local' is wired up."
-        )
-    from sentence_transformers import SentenceTransformer
-
-    # CPU-only: this runs alongside other models (NLI, reranker) on modest dev hardware,
-    # and an accelerator (MPS/CUDA) queue shared across them has been unreliable here —
-    # correctness over speed for a prototype ingest/query path.
-    return SentenceTransformer(settings.embed_model, device="cpu")
+class EmbeddingUnavailable(Exception):
+    pass
 
 
 def embed_texts(texts: list[str]) -> list[list[float]]:
-    """Batch-embed `embed_text` strings (heading path + body, §6.2 step 3) for storage."""
-    if not texts:
-        return []
-    model = _model()
-    vectors = model.encode(texts, normalize_embeddings=True, show_progress_bar=False)
-    return [v.tolist() for v in vectors]
+    settings = get_settings()
+    options = {"num_ctx": 2048}
+    if settings.ollama_num_threads is not None:
+        options["num_thread"] = settings.ollama_num_threads
+    vectors: list[list[float]] = []
+    for offset in range(0, len(texts), EMBED_BATCH_SIZE):
+        batch = texts[offset : offset + EMBED_BATCH_SIZE]
+        try:
+            with INFERENCE_LOCK:
+                response = httpx.post(
+                    f"{settings.ollama_base_url}/api/embed",
+                    json={
+                        "model": settings.embed_model,
+                        "input": batch,
+                        "dimensions": EMBED_DIMENSIONS,
+                        "keep_alive": settings.ollama_keep_alive,
+                        "options": options,
+                    },
+                    timeout=settings.request_deadline_s,
+                )
+            response.raise_for_status()
+            output = response.json()["embeddings"]
+            if not isinstance(output, list) or len(output) != len(batch):
+                raise ValueError("embedding batch count mismatch")
+            for vector in output:
+                if len(vector) != EMBED_DIMENSIONS or not all(math.isfinite(v) for v in vector):
+                    raise ValueError("invalid embedding dimensions/values")
+                norm = math.sqrt(sum(v * v for v in vector))
+                if norm == 0:
+                    raise ValueError("zero embedding")
+                vectors.append([v / norm for v in vector])
+        except (httpx.HTTPError, KeyError, TypeError, ValueError) as exc:
+            raise EmbeddingUnavailable(
+                "Local embeddings unavailable. Start Ollama and pull qwen3-embedding:0.6b."
+            ) from exc
+    return vectors
 
 
 def embed_query(text: str) -> list[float]:
-    """Embed one query string for a similarity search against stored chunk embeddings."""
-    return embed_texts([text])[0]
+    return embed_texts([f"Instruct: Retrieve authoritative legal evidence for the question.\nQuery: {text}"])[0]

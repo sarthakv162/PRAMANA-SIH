@@ -1,14 +1,14 @@
 """NLI entailment (§6.7): mDeBERTa-v3 XNLI. Premise = the claim's cited evidence spans
-(joined verbatim); hypothesis = the claim's English statement. Loaded lazily and cached
-process-wide — like `retrieval/embed.py`, this must not pay model-load cost at import time
-or reload per request.
+(joined verbatim); hypothesis = the claim's English statement. Cached process-wide; like
+`retrieval/embed.py`, this must not pay model-load cost at import time or reload per request.
+Live-mode startup explicitly warms it before accepting requests.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
 from functools import lru_cache
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, cast
 
 from app.config import get_settings
 
@@ -28,9 +28,16 @@ def _model_and_tokenizer() -> tuple[PreTrainedModel, PreTrainedTokenizerBase]:
     import torch
     from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
+    torch.set_num_threads(2)
     settings = get_settings()
-    tokenizer = AutoTokenizer.from_pretrained(settings.nli_model)
-    model = AutoModelForSequenceClassification.from_pretrained(settings.nli_model)
+    try:
+        tokenizer = cast(Any, AutoTokenizer).from_pretrained(settings.nli_model, local_files_only=True)
+        model = AutoModelForSequenceClassification.from_pretrained(settings.nli_model, local_files_only=True)
+    except OSError:
+        # The first setup downloads verifier weights; subsequent starts use only
+        # the persistent cache, without unnecessary hub metadata requests.
+        tokenizer = cast(Any, AutoTokenizer).from_pretrained(settings.nli_model)
+        model = AutoModelForSequenceClassification.from_pretrained(settings.nli_model)
     model.to("cpu")  # see retrieval/embed.py — accelerator contention on this machine
     model.eval()
     torch.set_grad_enabled(False)
@@ -45,7 +52,11 @@ def entailment_score(premise: str, hypothesis: str) -> NliResult:
     import torch
 
     model, tokenizer = _model_and_tokenizer()
-    inputs = tokenizer(premise, hypothesis, truncation=True, max_length=512, return_tensors="pt")
+    inputs = tokenizer(premise, hypothesis, truncation=False, return_tensors="pt")
+    if inputs["input_ids"].shape[-1] > 512:
+        # Discarding a tail can hide legal qualifications. A truncated premise must
+        # never certify the full cited text. Keep its sources available for review.
+        return NliResult(entailment=0.0, neutral=1.0, contradiction=0.0)
     logits = model(**inputs).logits[0]
     probs = torch.softmax(logits, dim=-1).tolist()
 

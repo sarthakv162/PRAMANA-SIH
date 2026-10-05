@@ -11,7 +11,6 @@ from datetime import date
 from pathlib import Path
 from typing import Any
 
-import sqlalchemy as sa
 from fastapi import APIRouter, Depends, HTTPException, Response
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
@@ -22,7 +21,7 @@ from app.core.errors import ApiError
 from app.core.fixtures import load_fixture
 from app.retrieval import repo
 from app.retrieval.evidence_pack import build_evidence_pack, stable_evidence_id
-from app.retrieval.repo import documents, live_corpus_version
+from app.retrieval.repo import live_corpus_version
 from app.schemas.documents import DocumentSummary
 from app.schemas.enums import Jurisdiction
 from app.schemas.evidence import EvidenceSpan
@@ -69,7 +68,8 @@ async def list_documents(
     if settings.mock_mode:
         docs = _mock_documents()
     else:
-        rows = session.execute(sa.select(documents)).all()
+        version = live_corpus_version(session)
+        rows = repo.documents_for_version(session, version[0]) if version else []
         docs = [
             DocumentSummary(
                 id=row.short_key,
@@ -85,7 +85,7 @@ async def list_documents(
             )
             for row in rows
         ]
-    if jurisdiction is not None:
+    if jurisdiction is not None and jurisdiction != Jurisdiction.BOTH:
         docs = [d for d in docs if d.jurisdiction == jurisdiction]
     if doc_type is not None:
         docs = [d for d in docs if d.doc_type == doc_type]
@@ -93,23 +93,32 @@ async def list_documents(
 
 
 @router.get("/documents/{doc_id}/pdf")
-async def get_document_pdf(doc_id: str, session: Session = Depends(get_session)) -> Response:
+async def get_document_pdf(
+    doc_id: str, corpus_version: str | None = None, session: Session = Depends(get_session)
+) -> Response:
     settings = get_settings()
     if settings.mock_mode:
         if doc_id not in {d.id for d in _mock_documents()}:
             raise HTTPException(status_code=404, detail="document not found")
-        raise ApiError(
-            code="pdf_unavailable", message="No PDF in mock mode.", status_code=501
-        )
+        raise ApiError(code="pdf_unavailable", message="No PDF in mock mode.", status_code=501)
 
     document = repo.fetch_document_by_short_key(session, doc_id)
     if document is None:
         raise HTTPException(status_code=404, detail="document not found")
-    pdf_path = (CORPUS_ROOT / document.pdf_path).resolve()
+    version = live_corpus_version(session)
+    label = corpus_version or (version[1] if version else "")
+    artifact = repo.document_artifact(session, doc_id, label)
+    if artifact is None:
+        raise ApiError("pdf_unavailable", "Document is not present in the requested corpus version.", 404)
+    pdf_path = (CORPUS_ROOT / artifact["pdf_path"]).resolve()
     if not pdf_path.is_relative_to(CORPUS_ROOT.resolve()):
         raise ApiError(code="pdf_unavailable", message="The configured PDF path is invalid.", status_code=404)
     if not pdf_path.exists():
         raise ApiError(code="pdf_unavailable", message="PDF file missing on disk.", status_code=404)
+    from app.core.hashing import sha256_hex
+
+    if sha256_hex(pdf_path.read_bytes()) != artifact["file_sha256"]:
+        raise ApiError(code="pdf_unavailable", message="PDF does not match the pinned source version.", status_code=409)
     return FileResponse(pdf_path, media_type="application/pdf")
 
 
@@ -126,9 +135,7 @@ async def get_span(evidence_id: str, session: Session = Depends(get_session)) ->
     if version is None:
         raise HTTPException(status_code=404, detail="no live corpus_version")
     corpus_version_id, corpus_version_label = version
-    chunk_row = repo.find_chunk_by_evidence_id(
-        session, corpus_version_id, stable_evidence_id, evidence_id
-    )
+    chunk_row = repo.find_chunk_by_evidence_id(session, corpus_version_id, stable_evidence_id, evidence_id)
     if chunk_row is None:
         raise HTTPException(status_code=404, detail="evidence span not found")
 

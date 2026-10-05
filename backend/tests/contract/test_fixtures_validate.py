@@ -13,6 +13,7 @@ from app.schemas.answer import AnswerCard
 from app.schemas.classify import ClassifyQuestion, ClassifyResult
 from app.schemas.errors import ErrorBody
 from app.schemas.eval import EvalResults
+from app.schemas.misc import SpeechAsrResponse
 from app.schemas.patent_risk import PatentRisk
 from app.schemas.receipts import Receipt, VerifyResult
 from app.schemas.refusal import RefusalCard
@@ -36,6 +37,7 @@ FIXTURE_MODEL_MAP = {
     "verify_tampered.json": VerifyResult,
     "eval_results.json": EvalResults,
     "error.json": ErrorBody,
+    "speech_asr_hi.json": SpeechAsrResponse,
 }
 
 

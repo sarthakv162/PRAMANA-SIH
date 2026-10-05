@@ -12,9 +12,38 @@ from app.render.dossier import build_dossier_item, missing_item
 from app.render.md import render_md
 from app.render.pdf import render_pdf
 
+
+def test_multilingual_export_preserves_unicode_or_rejects_unsupported_pdf_font():
+    import io
+    import zipfile
+
+    import pytest
+
+    from app.render.dossier import DossierItem
+
+    text = "आयुर्वेद का स्रोत पाठ"
+    item = DossierItem(
+        request_id="test",
+        receipt_id="test",
+        entry_hash="hash",
+        kind="answer",
+        title="Answer",
+        corpus_version=None,
+        as_of=None,
+        jurisdiction=None,
+        summary_lines=[text],
+    )
+    assert text in render_md([item], "auto").decode()
+    document = render_docx([item], "auto")
+    with zipfile.ZipFile(io.BytesIO(document)) as archive:
+        assert text in archive.read("word/document.xml").decode()
+    with pytest.raises(UnicodeEncodeError):
+        render_pdf([item], "auto")
+
+
 _VERBATIM_TEXT = (
     "(p) an invention which, in effect, is traditional knowledge or which is an "
-    "aggregation or duplication of known properties — including \"quoted\" & <tagged> text."
+    'aggregation or duplication of known properties — including "quoted" & <tagged> text.'
 )
 
 _ANSWER_PAYLOAD = {
@@ -46,9 +75,7 @@ _REFUSAL_PAYLOAD = {
     "type": "refusal",
     "reason": "no_evidence",
     "message": "The indexed documents don't cover this.",
-    "nearest_sources": [
-        {"citation_label": "The Patents Act, 1970 — s.47", "page": 28, "text": _VERBATIM_TEXT}
-    ],
+    "nearest_sources": [{"citation_label": "The Patents Act, 1970 — s.47", "page": 28, "text": _VERBATIM_TEXT}],
 }
 
 

@@ -1,7 +1,6 @@
 """Hash chain (§6.9, invariant I5): one global, append-only, linear chain across every
-request. `prev_hash` is locked and read inside the same transaction as the insert (`SELECT …
-FOR UPDATE` on the last row) so two concurrent requests can never both compute the same
-`prev_hash` and fork the chain.
+request. A transaction-scoped advisory lock serializes the tail read and insert, including
+the empty-chain case, while preserving the app role's insert-only audit-log privileges.
 """
 
 from __future__ import annotations
@@ -46,9 +45,7 @@ def append_entry(session: Session, request_id: str, entry: dict[str, Any]) -> Ch
     independent of table contents and remains held until the caller commits.
     """
     session.execute(sa.text("SELECT pg_advisory_xact_lock(:lock_key)"), {"lock_key": 5784116599020218673})
-    last = session.execute(
-        sa.select(audit_log.c.entry_hash).order_by(audit_log.c.seq.desc()).limit(1).with_for_update()
-    ).first()
+    last = session.execute(sa.select(audit_log.c.entry_hash).order_by(audit_log.c.seq.desc()).limit(1)).first()
     prev_hash = last.entry_hash if last else GENESIS_HASH
 
     entry_hash = chain_entry_hash(prev_hash, entry)
@@ -71,9 +68,7 @@ def verify_chain_segment(session: Session, up_to_seq: int) -> bool:
     """Recomputes every `entry_hash` from `payload`/`prev_hash` up to (and including)
     `up_to_seq` and checks it matches what's stored — invariant I5's tamper check.
     """
-    rows = session.execute(
-        sa.select(audit_log).where(audit_log.c.seq <= up_to_seq).order_by(audit_log.c.seq)
-    ).all()
+    rows = session.execute(sa.select(audit_log).where(audit_log.c.seq <= up_to_seq).order_by(audit_log.c.seq)).all()
     expected_prev = GENESIS_HASH
     for row in rows:
         if row.prev_hash != expected_prev:
@@ -86,12 +81,7 @@ def verify_chain_segment(session: Session, up_to_seq: int) -> bool:
 
 
 def entry_for_request(session: Session, request_id: str) -> ChainEntry | None:
-    stmt = (
-        sa.select(audit_log)
-        .where(audit_log.c.request_id == request_id)
-        .order_by(audit_log.c.seq.desc())
-        .limit(1)
-    )
+    stmt = sa.select(audit_log).where(audit_log.c.request_id == request_id).order_by(audit_log.c.seq.desc()).limit(1)
     row = session.execute(stmt).first()
     if row is None:
         return None

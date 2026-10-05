@@ -1,41 +1,27 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
-import { api } from '../api/client';
+import { api, workspaceConnected } from '../api/client';
+import { WorkspaceAccess } from '../components/workspace-access';
+import type { ConversationDetail } from '../api/types';
 import { QUERY_STAGES, type EvidenceSpan, type QueryCard, type QueryRequest } from '../api/types';
 import { EvidenceDrawer, EvidenceQuote, PageHeading, Panel, StateMessage, StatusBadge } from '../components/ui';
 import { useAppStore } from '../state/store';
 import { useQuerySSE } from '../hooks/useQuerySSE';
+import { useAnswerSpeech } from '../hooks/useAnswerSpeech';
+import { isGreeting } from '../lib/greeting';
 
-function useVoiceInput(onTranscript: (text: string) => void) {
-  const [recording, setRecording] = useState(false);
-  const recorder = useRef<MediaRecorder | null>(null);
-  const chunks = useRef<Blob[]>([]);
-  const { t } = useTranslation();
-  const start = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const instance = new MediaRecorder(stream);
-      recorder.current = instance; chunks.current = [];
-      instance.ondataavailable = (event) => { if (event.data.size) chunks.current.push(event.data); };
-      instance.onstop = async () => {
-        stream.getTracks().forEach((track) => track.stop());
-        try { const result = await api.asr(new Blob(chunks.current, { type: instance.mimeType || 'audio/webm' })); onTranscript(result.text); }
-        catch { startBrowserSpeech(); }
-      };
-      instance.start(); setRecording(true);
-    } catch { startBrowserSpeech(); }
-  };
-  const startBrowserSpeech = () => {
-    const SpeechRecognition = (window as Window & { SpeechRecognition?: new () => SpeechRecognitionLike; webkitSpeechRecognition?: new () => SpeechRecognitionLike }).SpeechRecognition || (window as Window & { webkitSpeechRecognition?: new () => SpeechRecognitionLike }).webkitSpeechRecognition;
-    if (!SpeechRecognition) { window.alert(t('voiceUnavailable')); return; }
-    const speech = new SpeechRecognition(); speech.lang = useAppStore.getState().language === 'auto' ? 'hi-IN' : useAppStore.getState().language; speech.onresult = (event) => onTranscript(event.results[0][0].transcript); speech.start();
-  };
-  const stop = () => { recorder.current?.stop(); setRecording(false); };
-  return { recording, start, stop };
+type LocalGreeting = { type: 'greeting'; message: string };
+type AskTurn = { id: number; query: string; card: QueryCard | LocalGreeting | null };
+
+function useVoiceInput(onTranscript: (text: string) => void, language: import('../api/types').Language) {
+  void onTranscript; void language;
+  const [error, setError] = useState('');
+  return { recording: false, error, notice: '',
+    start: () => setError('Local speech recognition is not configured. Please type your question.'), stop: () => undefined };
 }
-interface SpeechRecognitionLike { lang: string; onresult: (event: { results: { 0: { transcript: string } }[] }) => void; start: () => void }
 
 function ClaimCard({ card, claim, openEvidence }: { card: Extract<QueryCard, { type: 'answer' }>; claim: Extract<Extract<QueryCard, { type: 'answer' }>['sections'][number]['claims'][number], object>; openEvidence: (span: EvidenceSpan) => void }) {
   const { t } = useTranslation();
@@ -52,15 +38,14 @@ function AnswerCardView({ card, jurisdiction, onFollowup }: { card: Extract<Quer
   const health = useQuery({ queryKey: ['health'], queryFn: api.health });
   const addCase = useAppStore((state) => state.addCaseItem);
   const caseFile = useAppStore((state) => state.caseFile);
+  const caseError = useAppStore((state) => state.caseError);
   const alreadyAdded = caseFile.some((item) => item.request_id === card.request_id);
   const [drawerEvidence, setDrawerEvidence] = useState<EvidenceSpan | null>(null);
-  const [spoken, setSpoken] = useState(false);
+  const speech = useAnswerSpeech();
   const spans = Object.values(card.evidence);
   const sections = jurisdiction === 'BOTH' ? card.sections : card.sections.filter((section) => section.jurisdiction === jurisdiction);
   const speak = async () => {
-    if (spoken) { speechSynthesis.cancel(); setSpoken(false); return; }
-    try { const claims = card.sections.flatMap((section) => section.claims.map((claim) => claim.text)).join('. '); const blob = await api.tts(claims, card.language); const url = URL.createObjectURL(blob); const audio = new Audio(url); audio.onended = () => { URL.revokeObjectURL(url); setSpoken(false); }; setSpoken(true); await audio.play(); }
-    catch { const utterance = new SpeechSynthesisUtterance(card.sections.flatMap((section) => section.claims.map((claim) => claim.text)).join('. ')); utterance.lang = card.language === 'auto' ? 'en-IN' : card.language; utterance.onend = () => setSpoken(false); setSpoken(true); speechSynthesis.speak(utterance); }
+    await speech.speak(sections.flatMap((section) => section.claims.map((claim) => claim.text)).join('. '), card.language);
   };
   const open = (evidence: EvidenceSpan) => setDrawerEvidence(evidence);
   return <>
@@ -75,7 +60,10 @@ function AnswerCardView({ card, jurisdiction, onFollowup }: { card: Extract<Quer
       })}</div>
       {jurisdiction === 'BOTH' && <div className="separation-note">⊘ No cross-jurisdiction mixing · India: {spans.filter((span) => span.jurisdiction === 'IN').length} spans · International: {spans.filter((span) => span.jurisdiction === 'INTL').length} spans</div>}
       {card.glossary.length > 0 && <div className="glossary-row"><span>Language terms</span>{card.glossary.map((item) => <details key={item.term}><summary>{item.term}</summary><span>{item.gloss}</span></details>)}</div>}
-      <div className="answer-bottom"><div className="followups"><b>{t('followups')}</b>{card.suggested_followups.map((followup) => <button className="followup-chip" key={followup} onClick={() => onFollowup(followup)}>{followup} →</button>)}</div><div className="answer-cta"><button className="button button-secondary" disabled={alreadyAdded} aria-live="polite" onClick={() => { const first = card.sections.flatMap((section) => section.claims)[0]; addCase({ request_id: card.request_id, summary: first?.text ?? 'PRAMANA result', receipt_id: card.receipt_id }); }}>{alreadyAdded ? t('addedToCase') : t('addToCase')}</button><button className="button button-secondary" onClick={() => void speak()}>{spoken ? t('stopListening') : `♫ ${t('listen')}`}</button><Link className="button button-secondary" to={`/receipt/${card.receipt_id}`}>{t('receipt')} ↗</Link></div></div>
+      <div className="answer-bottom"><div className="followups"><b>{t('followups')}</b>{card.suggested_followups.map((followup) => <button className="followup-chip" key={followup} onClick={() => onFollowup(followup)}>{followup} →</button>)}</div><div className="answer-cta"><button className="button button-secondary" disabled={alreadyAdded} aria-live="polite" onClick={() => { const first = card.sections.flatMap((section) => section.claims)[0]; addCase({ request_id: card.request_id, summary: first?.text ?? 'PRAMANA result', receipt_id: card.receipt_id }); }}>{alreadyAdded ? t('addedToCase') : t('addToCase')}</button><button className="button button-secondary" aria-busy={speech.status === 'loading'} onClick={() => void speak()}>{speech.status !== 'idle' ? t('stopListening') : `♫ ${t('listen')} · Sarvam`}</button><Link className="button button-secondary" to={`/receipt/${card.receipt_id}`}>{t('receipt')} ↗</Link></div></div>
+      {caseError && <p className="field-error" role="alert">{caseError}</p>}
+      {speech.error && <p className="field-error" role="alert">{speech.error}</p>}
+      <p className="small-muted">{t('sarvamSpeechNotice')}</p>
     </Panel><EvidenceDrawer evidence={drawerEvidence} onClose={() => setDrawerEvidence(null)} onNavigate={(direction) => { const index = spans.findIndex((span) => span.id === drawerEvidence?.id); setDrawerEvidence(spans[(index + direction + spans.length) % spans.length] ?? null); }} />
   </>;
 }
@@ -83,50 +71,98 @@ function AnswerCardView({ card, jurisdiction, onFollowup }: { card: Extract<Quer
 function EscalationForm({ refusal, onClose }: { refusal: Extract<QueryCard, { type: 'refusal' }>; onClose: () => void }) {
   const { t } = useTranslation(); const [contact, setContact] = useState(''); const [note, setNote] = useState(''); const [ticket, setTicket] = useState(''); const [error, setError] = useState(''); const [busy, setBusy] = useState(false);
   const submit = async (event: React.FormEvent) => { event.preventDefault(); setBusy(true); setError(''); try { const result = await api.escalate({ request_id: refusal.request_id, ...(contact ? { contact } : {}), ...(note ? { note } : {}) }); setTicket(result.ticket_id); } catch (cause) { setError(cause instanceof Error ? cause.message : 'Unable to create ticket.'); } finally { setBusy(false); } };
-  return <div className="modal-backdrop"><section className="modal-card" role="dialog" aria-modal="true" aria-labelledby="escalate-heading"><header><h2 id="escalate-heading">{t('escalationsTitle')}</h2><button className="icon-button" onClick={onClose} aria-label={t('close')}>×</button></header>{ticket ? <div className="success-card"><div className="success-mark">✓</div><h3>{t('ticket')}</h3><code>{ticket}</code></div> : <form onSubmit={(event) => void submit(event)}><label>{t('contact')}<input value={contact} onChange={(event) => setContact(event.target.value)} autoComplete="email" /></label><label>{t('note')}<textarea value={note} onChange={(event) => setNote(event.target.value)} rows={4} /></label>{error && <p className="field-error" role="alert">{error}</p>}<button className="button button-primary" disabled={busy}>{busy ? t('loading') : t('submit')}</button></form>}</section></div>;
+  return createPortal(<div className="modal-backdrop"><section className="modal-card" role="dialog" aria-modal="true" aria-labelledby="escalate-heading"><header><h2 id="escalate-heading">{t('escalationsTitle')}</h2><button className="icon-button" onClick={onClose} aria-label={t('close')}>×</button></header>{ticket ? <div className="success-card"><div className="success-mark">✓</div><h3>{t('ticket')}</h3><code>{ticket}</code></div> : <form onSubmit={(event) => void submit(event)}><label>{t('contact')}<input value={contact} onChange={(event) => setContact(event.target.value)} autoComplete="email" /></label><label>{t('note')}<textarea value={note} onChange={(event) => setNote(event.target.value)} rows={4} /></label>{error && <p className="field-error" role="alert">{error}</p>}<button className="button button-primary" disabled={busy}>{busy ? t('loading') : t('submit')}</button></form>}</section></div>, document.body);
 }
 
 function RefusalView({ card }: { card: Extract<QueryCard, { type: 'refusal' }> }) {
   const { t } = useTranslation(); const [escalate, setEscalate] = useState(false); const [drawer, setDrawer] = useState<EvidenceSpan | null>(null);
-  return <><Panel className="refusal-panel"><div className="refusal-mark">!</div><span className="eyebrow">No supported answer</span><h2>{card.reason.replaceAll('_', ' ')}</h2><p>{card.message}</p>{card.nearest_sources.map((source) => <EvidenceQuote key={source.id} evidence={source} onOpen={() => setDrawer(source)} />)}<div className="answer-cta"><button className="button button-primary" onClick={() => setEscalate(true)}>{t('escalationsTitle')}</button><Link className="button button-secondary" to={`/receipt/${card.receipt_id}`}>{t('receipt')} ↗</Link></div></Panel><EvidenceDrawer evidence={drawer} onClose={() => setDrawer(null)} />{escalate && <EscalationForm refusal={card} onClose={() => setEscalate(false)} />}</>;
+  return <><Panel className="refusal-panel"><div className="refusal-mark">!</div><span className="eyebrow">{card.reason === 'generation_unavailable' ? 'Retrieved source excerpts' : 'No supported answer'}</span><h2>{card.reason.replaceAll('_', ' ')}</h2><p>{card.message}</p>{card.nearest_sources.map((source) => <EvidenceQuote key={source.id} evidence={source} onOpen={() => setDrawer(source)} />)}<div className="answer-cta"><button className="button button-primary" onClick={() => setEscalate(true)}>{t('escalationsTitle')}</button><Link className="button button-secondary" to={`/receipt/${card.receipt_id}`}>{t('receipt')} ↗</Link></div></Panel><EvidenceDrawer evidence={drawer} onClose={() => setDrawer(null)} />{escalate && <EscalationForm refusal={card} onClose={() => setEscalate(false)} />}</>;
 }
 
 export function AskPage() {
   const { t } = useTranslation();
   const [query, setQuery] = useState('');
-  const [turns, setTurns] = useState<{ id: number; query: string; card: QueryCard | null }[]>([]);
+  const [turns, setTurns] = useState<AskTurn[]>([]);
+  const [conversationId, setConversationId] = useState<string | null>(null);
+  const [historyError, setHistoryError] = useState('');
+  const sending = useRef(false);
+  const [starting, setStarting] = useState(false);
+  const [connected, setConnected] = useState(workspaceConnected);
+  useEffect(() => { if (connected) void useAppStore.getState().refreshCase(); }, [connected]);
+  const saved = useQuery({ queryKey: ['conversations', connected], queryFn: api.conversations, enabled: connected, retry: false });
+  const resume = (conversation: ConversationDetail) => {
+    setConversationId(conversation.id);
+    const loaded: AskTurn[] = [];
+    for (const message of conversation.messages) {
+      if (message.role === 'user') loaded.push({ id: loaded.length + 1, query: message.content, card: null });
+      else if (loaded.length && message.result) loaded[loaded.length - 1].card = message.result;
+    }
+    setTurns(loaded); clearStatus();
+  };
+  useEffect(() => {
+    const stored = sessionStorage.getItem('pramana-conversation-id');
+    if (stored && workspaceConnected()) void api.conversation(stored).then(resume).catch(() => sessionStorage.removeItem('pramana-conversation-id'));
+    // Restore the current conversation once when the page mounts.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  useEffect(() => {
+    if (conversationId) sessionStorage.setItem('pramana-conversation-id', conversationId); else sessionStorage.removeItem('pramana-conversation-id');
+  }, [conversationId]);
   const { jurisdiction, asOf, language, persona } = useAppStore();
-  const { stages, error, isLoading, run, cancel } = useQuerySSE();
-  const voice = useVoiceInput(setQuery);
+  const { stages, error, isLoading, run, cancel, clearStatus } = useQuerySSE();
+  const voice = useVoiceInput(setQuery, language);
   const newestTurnRef = useRef<HTMLElement | null>(null);
   useEffect(() => {
     if (turns.length) newestTurnRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, [turns.length]);
   const send = async (text = query) => {
-    if (!text.trim() || isLoading) return;
+    if (!text.trim() || isLoading || sending.current) return;
     const cleanText = text.trim();
     const id = Date.now();
-    const body: QueryRequest = { query: cleanText, jurisdiction, as_of: asOf, language, persona, mode: voice.recording ? 'voice' : 'text', conversation_id: null, formulation: null };
+    if (isGreeting(cleanText)) {
+      clearStatus();
+      setTurns((previous) => [...previous, { id, query: cleanText, card: { type: 'greeting', message: t('greetingResponse') } }]);
+      setQuery('');
+      return;
+    }
+    sending.current = true;
+    setStarting(true);
+    let activeConversation = conversationId;
+    if (connected && !activeConversation) {
+      try { activeConversation = (await api.createConversation(cleanText.slice(0, 160))).id; setConversationId(activeConversation); }
+      catch (cause) { setHistoryError(cause instanceof Error ? cause.message : 'Unable to create conversation.'); sending.current = false; setStarting(false); return; }
+    }
+    const body: QueryRequest = { query: cleanText, jurisdiction, as_of: asOf, language, persona, mode: voice.recording ? 'voice' : 'text', conversation_id: activeConversation, formulation: null };
     setTurns((previous) => [...previous, { id, query: cleanText, card: null }]);
     setQuery('');
-    const response = await run(body);
+    let response: QueryCard | null;
+    try { response = await run(body); } finally { sending.current = false; setStarting(false); }
+    if (response) { void saved.refetch(); }
     if (response) setTurns((previous) => previous.map((turn) => turn.id === id ? { ...turn, card: response } : turn));
   };
   const examples = ['Can traditional knowledge be patented in India?', 'What fees are listed in the indexed documents?'];
   const progress = useMemo(() => QUERY_STAGES.filter((stage) => stages[stage] === 'done').length, [stages]);
   const latestTurn = turns.at(-1);
   return <div className="page-stack ask-page">
+    <details className="history-panel"><summary>Saved conversations · shared demo workspace</summary>
+      <WorkspaceAccess onConnect={() => { setConnected(workspaceConnected()); void saved.refetch(); void useAppStore.getState().refreshCase(); }} />
+      <div className="history-actions"><button className="button button-secondary" disabled={isLoading || starting} onClick={() => { setConversationId(null); setTurns([]); clearStatus(); }}>New conversation</button></div>
+      {(historyError || saved.error) && <StateMessage error={historyError || saved.error} />}
+      <ul className="history-list">{saved.data?.map((item) => <li key={item.id}><button className="text-button" disabled={isLoading || starting} onClick={() => void api.conversation(item.id).then(resume).catch((cause: Error) => setHistoryError(cause.message))}>{item.title}</button><small>{new Date(item.updated_at).toLocaleDateString()}</small><button className="icon-button" aria-label={`Delete conversation: ${item.title}`} disabled={isLoading || starting} onClick={() => void api.deleteConversation(item.id).then(() => { if (conversationId === item.id) { setConversationId(null); setTurns([]); } void saved.refetch(); }).catch((cause: Error) => setHistoryError(cause.message))}>×</button></li>)}</ul>
+    </details>
+
     {turns.length > 0 && <PageHeading eyebrow="IP-SAKTI / SAHAYAK" title={t('askTitle')} description={t('askDescription')} />}
     {turns.length === 0 ? <section className="research-welcome" aria-label={t('researchTools')}>
       <div className="welcome-orbit orbit-one" aria-hidden="true" /><div className="welcome-orbit orbit-two" aria-hidden="true" />
       <div className="welcome-copy"><span className="welcome-kicker"><i /> {t('homeKicker')}</span><h1>{t('homeFirst')}<br /><em>{t('homeSecond')}</em></h1><p>{t('homeDescription')}</p>
         <div className="welcome-pills"><span><b>01</b> {t('heroPillOne')}</span><span><b>02</b> {t('heroPillTwo')}</span><span><b>03</b> {t('heroPillThree')}</span></div>
       </div>
-      <div className="welcome-visual"><div className="visual-glow" aria-hidden="true" /><div className="visual-document" aria-hidden="true"><div className="doc-top"><span>IN</span><i>ACT · 1970</i></div><b>Patents Act</b><small>CHAPTER II — INVENTIONS NOT PATENTABLE</small><div className="doc-line wide" /><div className="doc-line" /><div className="doc-highlight">traditional knowledge <span>§ 3(p)</span></div><div className="doc-line short" /><div className="doc-foot"><span>● VERIFIED SOURCE</span><span>PAGE 12</span></div></div><Link className="floating-evidence" to="/corpus" aria-label={`${t('evidence')}: ${t('openSource')}`}><span className="evidence-spark" aria-hidden="true">✳</span><span><b>{t('evidence')}</b><small>Every claim, traceable</small></span><i aria-hidden="true">↗</i></Link>
+      <div className="welcome-visual"><div className="visual-glow" aria-hidden="true" /><div className="visual-document" aria-hidden="true"><div className="doc-top"><span>IN</span><i>ACT · 1970</i></div><b>Patents Act</b><small>CHAPTER II — INVENTIONS NOT PATENTABLE</small><div className="doc-line wide" /><div className="doc-line" /><div className="doc-highlight">traditional knowledge <span>§ 3(p)</span></div><div className="doc-line short" /><div className="doc-foot"><span>SOURCE PREVIEW</span><span>ILLUSTRATION</span></div></div><Link className="floating-evidence" to="/corpus" aria-label={`${t('evidence')}: ${t('openSource')}`}><span className="evidence-spark" aria-hidden="true">✳</span><span><b>{t('evidence')}</b><small>Every claim, traceable</small></span><i aria-hidden="true">↗</i></Link>
       </div>
     </section> : <div className="conversation-thread" aria-live="polite">{turns.map((turn, index) => <section ref={index === turns.length - 1 ? newestTurnRef : undefined} className="conversation-turn" key={turn.id}>
       <div className="user-message"><span className="user-avatar">R</span><div><small>{t('yourQuestion')} <span>· {String(index + 1).padStart(2, '0')}</span></small><p>{turn.query}</p></div></div>
-      {turn.card?.type === 'answer' && <div className="assistant-message"><div className="assistant-avatar">✳</div><div className="assistant-response"><div className="assistant-label"><span>PRAMANA <i>{t('verifiedResearch')}</i></span><button className="text-button" type="button" onClick={() => navigator.clipboard?.writeText(turn.card?.type === 'answer' ? turn.card.sections.flatMap((section) => section.claims.map((claim) => claim.text)).join('\n\n') : '')}>{t('copyAnswer')}</button></div><AnswerCardView card={turn.card} jurisdiction={turn.card.jurisdiction} onFollowup={(text) => void send(text)} /></div></div>}
+      {turn.card?.type === 'answer' && <div className="assistant-message"><div className="assistant-avatar">✳</div><div className="assistant-response"><div className="assistant-label"><span>PRAMANA <i>{turn.card.sections.some((section) => section.claims.some((claim) => claim.status === 'verified')) ? t('verifiedResearch') : 'Review required'}</i></span><button className="text-button" type="button" onClick={() => navigator.clipboard?.writeText(turn.card?.type === 'answer' ? turn.card.sections.flatMap((section) => section.claims.map((claim) => claim.text)).join('\n\n') : '')}>{t('copyAnswer')}</button></div><AnswerCardView card={turn.card} jurisdiction={turn.card.jurisdiction} onFollowup={(text) => void send(text)} /></div></div>}
+      {turn.card?.type === 'greeting' && <div className="assistant-message" role="status"><div className="assistant-avatar">✳</div><div className="assistant-response"><Panel className="answer-panel"><p className="claim-text">{turn.card.message}</p></Panel></div></div>}
       {turn.card?.type === 'refusal' && <div className="assistant-message"><div className="assistant-avatar">✳</div><div className="assistant-response"><RefusalView card={turn.card} /></div></div>}
       {isLoading && latestTurn?.id === turn.id && <Panel className="stepper-panel"><div className="stepper-head"><div><span className="eyebrow">RETRIEVAL PIPELINE</span><h2>{t('askPipeline')}</h2></div><div className="row"><span className="progress-label">{progress}/{QUERY_STAGES.length}</span><button className="text-button" onClick={cancel}>{t('cancel')}</button></div></div><ol className="stage-stepper">{QUERY_STAGES.map((stage, stageIndex) => <li key={stage} className={`stage-${stages[stage] ?? 'pending'}`}><span className="stage-dot">{stages[stage] === 'done' ? '✓' : stageIndex + 1}</span><span>{stage}</span></li>)}</ol></Panel>}
       {error && latestTurn?.id === turn.id && <StateMessage error={error} onRetry={() => void send(turn.query)} />}
@@ -138,8 +174,10 @@ export function AskPage() {
     </div></section>}
     {error && turns.length === 0 && <StateMessage error={error} onRetry={() => void send()} />}
     <div className="composer-dock"><div className="query-context">{jurisdiction === 'BOTH' ? `${t('india')} + ${t('international')}` : jurisdiction === 'IN' ? t('india') : t('international')}<span>·</span>{new Date(`${asOf}T00:00:00`).toLocaleDateString()}<span>·</span>{t(persona)}</div>
-      <form className="query-panel" onSubmit={(event) => { event.preventDefault(); void send(); }}><label htmlFor="query-input" className="sr-only">{t('queryPlaceholder')}</label><textarea id="query-input" placeholder={t('queryPlaceholder')} value={query} onChange={(event) => setQuery(event.target.value)} rows={2} disabled={isLoading} /><div className="composer-toolbar"><div className="composer-utilities"><button type="button" className={`icon-button mic-button ${voice.recording ? 'is-recording' : ''}`} aria-label={voice.recording ? t('stopListening') : t('listen')} onClick={() => voice.recording ? voice.stop() : void voice.start()}>{voice.recording ? '■' : <svg aria-hidden="true" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3m-4 0h8"/></svg>}</button>{voice.recording && <span className="small-muted">{t('recording')}</span>}<span className="composer-separator" /><span className="composer-scope">{jurisdiction === 'BOTH' ? t('twoJurisdictions') : t('indexedSources')}</span></div><button className="button button-primary composer-send" disabled={!query.trim() || isLoading} aria-label={isLoading ? t('loading') : t('send')}>{isLoading ? <span className="composer-spinner" /> : <span className="send-arrow">↑</span>}{isLoading ? t('loading') : t('send')}</button></div></form>
-      {turns.length === 0 && <div className="example-row"><span>{t('examples')}</span>{examples.map((item) => <button key={item} className="example-chip" disabled={isLoading} onClick={() => void send(item)}>{item}<span>↗</span></button>)}</div>}
+      <form className="query-panel" onSubmit={(event) => { event.preventDefault(); void send(); }}><label htmlFor="query-input" className="sr-only">{t('queryPlaceholder')}</label><textarea id="query-input" placeholder={t('queryPlaceholder')} value={query} onChange={(event) => setQuery(event.target.value)} rows={2} disabled={isLoading || starting} /><div className="composer-toolbar"><div className="composer-utilities"><button type="button" className={`icon-button mic-button ${voice.recording ? 'is-recording' : ''}`} aria-label={voice.recording ? t('stopListening') : t('listen')} onClick={() => voice.recording ? voice.stop() : void voice.start()}>{voice.recording ? '■' : <svg aria-hidden="true" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3m-4 0h8"/></svg>}</button>{voice.recording && <span className="small-muted">{t('recording')}</span>}<span className="composer-separator" /><span className="composer-scope">{jurisdiction === 'BOTH' ? t('twoJurisdictions') : t('indexedSources')}</span></div><button className="button button-primary composer-send" disabled={!query.trim() || isLoading || starting} aria-label={isLoading ? t('loading') : t('send')}>{isLoading ? <span className="composer-spinner" /> : <span className="send-arrow">↑</span>}{isLoading ? t('loading') : t('send')}</button></div></form>
+      {turns.length === 0 && <div className="example-row"><span>{t('examples')}</span>{examples.map((item) => <button key={item} className="example-chip" disabled={isLoading || starting} onClick={() => void send(item)}>{item}<span>↗</span></button>)}</div>}
+      {voice.error && <p className="field-error" role="alert">{voice.error}</p>}
+      {voice.notice && <p className="small-muted" role="status">{voice.notice}</p>}
       <p className="composer-note">{t('composerDisclaimer')}</p>
     </div>
   </div>;

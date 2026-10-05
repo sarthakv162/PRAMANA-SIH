@@ -62,6 +62,7 @@ class DocType(StrEnum):
 
 
 class RefusalReason(StrEnum):
+    GENERATION_UNAVAILABLE = "generation_unavailable"
     NO_EVIDENCE = "no_evidence"
     OUT_OF_SCOPE = "out_of_scope"
     LOW_CONFIDENCE = "low_confidence"

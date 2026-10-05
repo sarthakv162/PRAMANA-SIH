@@ -25,13 +25,17 @@ _LEGAL_ADVICE_PATTERNS = [
     ]
 ]
 
+_TRADITIONAL_KNOWLEDGE_PATENT_PATTERN = re.compile(
+    r"\btraditional knowledge\b.*\bpatent\w*\b|"
+    r"\bpatent\w*\b.*\btraditional knowledge\b",
+    re.IGNORECASE,
+)
+
 _KEYWORD_RULES: dict[str, list[re.Pattern[str]]] = {
     "classify": [
         re.compile(r"\bclassif(y|ication)\b", re.IGNORECASE),
         re.compile(r"\bwhat category\b", re.IGNORECASE),
-        re.compile(
-            r"\bis my (formulation|product) (classical|proprietary|a new drug)\b", re.IGNORECASE
-        ),
+        re.compile(r"\bis my (formulation|product) (classical|proprietary|a new drug)\b", re.IGNORECASE),
     ],
     "patent_risk": [
         re.compile(r"\bpatent (risk|eligib)", re.IGNORECASE),
@@ -96,6 +100,23 @@ _EXEMPLARS: dict[str, list[str]] = {
     ],
 }
 
+# Coverage is defined by subject matter, independently of what is currently indexed.
+_DOMAIN = re.compile(
+    r"\b(ayurved\w*|ayush|patent\w*|trademark\w*|copyright|geographical indication|"
+    r"traditional knowledge|biodiversity|biological diversity|biopiracy|benefit.?sharing|"
+    r"nba|sbb|bmc|tkdl|tk|wipo|trips|pct|nagoya|cbd|budapest treaty|madrid protocol|"
+    r"hague agreement|plant variet\w*|ppvfr|fssai|cdsco|phytopharmaceutical\w*|"
+    r"nutraceutical\w*|aahara?|drug\w*|cosmetic\w*|licen[cs]\w*|regulat\w*|"
+    r"manufactur\w*|formulat\w*|intellectual property|trade secret|design protection|"
+    r"herbal|medicinal|botanical|clinical trial\w*|label\w*|export|import)\b",
+    re.I,
+)
+_UNRELATED = re.compile(
+    r"\b(weather|rain|sports? score|football|cricket|capital of|write (?:me )?a poem|"
+    r"recipe for (?:dinner|cake)|bitcoin price)\b",
+    re.I,
+)
+
 SIMILARITY_FLOOR = 0.35
 
 
@@ -130,6 +151,8 @@ def route(query_en: str) -> tuple[str, str | None]:
     """Returns `(intent, direct_section_key)`. `direct_section_key` is set only when a
     citation regex found an unambiguous section reference (§6.4 step 4a fast path).
     """
+    if _UNRELATED.search(query_en):
+        return "out_of_scope", None
     if any(p.search(query_en) for p in _LEGAL_ADVICE_PATTERNS):
         return "legal_advice", None
 
@@ -138,11 +161,21 @@ def route(query_en: str) -> tuple[str, str | None]:
     if resolved_citation:
         return "qa", resolved_citation.section_key
 
+    # The plan's primary TK patentability flow maps to Patents Act s.3(p). Broad semantic
+    # retrieval can otherwise prefer neighboring opposition sections that merely mention TK.
+    if _TRADITIONAL_KNOWLEDGE_PATENT_PATTERN.search(query_en):
+        return "qa", "patents_act_1970#s3(p)"
+
     for intent, patterns in _KEYWORD_RULES.items():
         if any(p.search(query_en) for p in patterns):
             return intent, None
 
-    intent, score = _knn_intent(query_en)
+    if _DOMAIN.search(query_en):
+        return "qa", None
+    try:
+        intent, score = _knn_intent(query_en)
+    except embed.EmbeddingUnavailable:
+        return "out_of_scope", None
     if score < SIMILARITY_FLOOR:
         return "out_of_scope", None
     return intent, None

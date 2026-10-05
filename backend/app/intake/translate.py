@@ -1,12 +1,8 @@
-"""§6.3 translate: English is the retrieval pivot language, so a non-English query is
-translated before `route`/`retrieve`, and the answer language's claims are translated back
-before rendering. Legal terms of art are masked before translation and restored after (a
-term-lock glossary, §6.3, §8) so a translation model can't rephrase "traditional knowledge"
-into something a citation search won't recognise.
+"""Local Ollama English-pivot translation with term locking (§6.3, §8).
 
-`TRANSLATE_PROVIDER=llm` (§6.13) is the only provider implemented — Bhashini needs keys this
-environment doesn't have; IndicTrans2 is explicitly a stretch goal (§6.3). An English query
-never calls out to a model at all.
+Non-English questions are translated before retrieval; verified claim paraphrases and gaps
+are translated only after their English text has been checked against source evidence. Statutory
+evidence spans remain verbatim in the source language. An English question avoids translation.
 """
 
 from __future__ import annotations
@@ -17,7 +13,7 @@ from pathlib import Path
 
 import yaml
 
-from app.generation.llm import get_llm_client
+from app.generation.llm import LlmError, get_llm_client
 from app.schemas.enums import Language
 
 _LANGUAGE_NAMES = {
@@ -58,21 +54,66 @@ def _unmask(text: str, restore: dict[str, str]) -> str:
     return text
 
 
+def _translation_chunks(text: str, limit: int = 1800) -> list[str]:
+    """Split long text at sentence/word boundaries within the local prompt budget."""
+    if len(text) <= limit:
+        return [text]
+    sentences = re.split(r"(?<=[.!?])\s+|\n+", text)
+    segments: list[str] = []
+    current = ""
+    for sentence in sentences:
+        words = sentence.split()
+        parts: list[str] = []
+        part = ""
+        for word in words:
+            if len(word) > limit:
+                if part:
+                    parts.append(part)
+                parts.extend(word[i : i + limit] for i in range(0, len(word), limit))
+                part = ""
+            elif not part or len(part) + len(word) + 1 <= limit:
+                part = f"{part} {word}".strip()
+            else:
+                parts.append(part)
+                part = word
+        if part:
+            parts.append(part)
+        for item in parts:
+            candidate = f"{current} {item}".strip()
+            if current and len(candidate) > limit:
+                segments.append(current)
+                current = item
+            else:
+                current = candidate
+    if current:
+        segments.append(current)
+    return segments
+
+
+def _translate(text: str, source: Language, target: Language) -> str:
+    translation_chunks = _translation_chunks(text)
+    llm_client = get_llm_client()
+    target_name = _LANGUAGE_NAMES.get(target, target.value)
+    translated_chunks: list[str] = []
+    for chunk in translation_chunks:
+        translated_chunks.append(
+            llm_client.generate_text(
+                system=(
+                    f"Translate the user's text to {target_name}. Output only the translation. "
+                    "Copy tokens shaped like __TERM_0__ through unchanged."
+                ),
+                user=chunk,
+            ).strip()
+        )
+    return " ".join(translated_chunks)
+
+
 def translate_to_english(text: str, source_lang: Language) -> str:
     if source_lang == Language.EN or source_lang == Language.AUTO:
         return text
 
     masked, restore = _mask_terms(text)
-    source_name = _LANGUAGE_NAMES.get(source_lang, source_lang.value)
-    client = get_llm_client()
-    translated = client.generate_text(
-        system=(
-            "Translate the user's text to English. Output only the translation, nothing "
-            "else. Tokens shaped like __TERM_0__ are placeholders — copy them through "
-            "unchanged, do not translate or remove them."
-        ),
-        user=f"Source language: {source_name}\n\nText:\n{masked}",
-    )
+    translated = _translate(masked, source_lang, Language.EN)
     return _unmask(translated.strip(), restore)
 
 
@@ -81,16 +122,7 @@ def translate_from_english(text: str, target_lang: Language) -> str:
         return text
 
     masked, restore = _mask_terms(text)
-    target_name = _LANGUAGE_NAMES.get(target_lang, target_lang.value)
-    client = get_llm_client()
-    translated = client.generate_text(
-        system=(
-            f"Translate the user's text to {target_name}. Output only the translation, "
-            "nothing else. Tokens shaped like __TERM_0__ are placeholders — copy them "
-            "through unchanged."
-        ),
-        user=masked,
-    )
+    translated = _translate(masked, Language.EN, target_lang)
     return _unmask(translated.strip(), restore)
 
 
@@ -103,6 +135,10 @@ def back_translation_ok(original_en: str, translated: str, target_lang: Language
         return True
     try:
         roundtrip = translate_to_english(translated, target_lang)
+    except LlmError:
+        # Provider failures must reach the caller; treating them as a low confidence score
+        # hides broken credentials and produces a misleading answer card.
+        raise
     except Exception:
         return False
 

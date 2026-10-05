@@ -30,10 +30,24 @@ def test_numbers_ok_false_when_claim_invents_a_number() -> None:
     assert numbers_ok(claim, premise) is False
 
 
+def test_numbers_ok_ignores_section_numbers_checked_by_section_guard() -> None:
+    premise = "An invention which, in effect, is traditional knowledge."
+    claim = "Section 3(p) excludes traditional knowledge from patentability."
+    assert numbers_ok(claim, premise) is True
+
+
 def test_dates_ok_false_when_year_not_in_premise() -> None:
     premise = "This Act may be called the Patents Act, 1970."
     claim = "The relevant Act was passed in 1999."
     assert dates_ok(claim, premise) is False
+
+
+def test_act_title_year_can_be_supported_by_server_citation_metadata() -> None:
+    premise = "The following are not inventions within the meaning of this Act."
+    metadata = "The Patents Act, 1970 — s.3(p)"
+    assert numbers_ok("The Patents Act, 1970 lists this category.", premise, metadata) is True
+    assert dates_ok("The Patents Act, 1970 lists this category.", premise, metadata) is True
+    assert dates_ok("This occurred in 1970.", premise, metadata) is False
 
 
 def test_section_refs_ok_false_when_claim_invents_a_section() -> None:
@@ -46,6 +60,20 @@ def test_section_refs_ok_true_when_premise_names_it() -> None:
     premise = "No patent shall be granted under section 3(p) of the Act."
     claim = "Section 3(p) excludes traditional knowledge from patentability."
     assert section_refs_ok(claim, premise) is True
+
+
+def test_section_refs_ok_uses_cited_locator_when_excerpt_starts_inside_section() -> None:
+    premise = "An invention which, in effect, is traditional knowledge."
+    claim = "Section 3(p) excludes traditional knowledge from patentability."
+    assert section_refs_ok(claim, premise, {"section 3", "section 3(p)"}) is True
+    assert section_refs_ok(claim.replace("3(p)", "5"), premise, {"section 3(p)"}) is False
+
+
+def test_section_reference_abbreviations_use_server_locator_validation() -> None:
+    premise = "The following are not inventions within the meaning of this Act."
+    locators = {"section 3", "section 3(p)"}
+    assert section_refs_ok("The rule is in s.3(p).", premise, locators) is True
+    assert section_refs_ok("The rule is in s.5.", premise, locators) is False
 
 
 def test_negation_ok_false_when_claim_drops_the_premise_hedge() -> None:

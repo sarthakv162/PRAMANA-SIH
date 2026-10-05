@@ -9,6 +9,7 @@ services:
       - "127.0.0.1:5432:5432"
     volumes:
       - pramana_db_data:/var/lib/postgresql/data
+    mem_limit: 1g
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 5s
@@ -16,6 +17,7 @@ services:
       retries: 20
 
   backend:
+    image: pramana-backend:local
     build:
       context: .
       dockerfile: backend/Dockerfile
@@ -26,18 +28,36 @@ services:
       DATABASE_URL_ADMIN: postgresql+psycopg://${POSTGRES_USER:-pramana}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@db:5432/${POSTGRES_DB:-pramana}
       INGEST_DATABASE_URL: postgresql+psycopg://ingest_rw:${INGEST_DB_PASSWORD:?Set INGEST_DB_PASSWORD in .env}@db:5432/${POSTGRES_DB:-pramana}
       FIXTURES_DIR: /workspace/contracts/fixtures
+      HF_HOME: /root/.cache/huggingface
+      OLLAMA_BASE_URL: http://host.docker.internal:11434
+      OMP_NUM_THREADS: 2
+      TOKENIZERS_PARALLELISM: "false"
+    mem_limit: 3g
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
+      - ./backend/app:/workspace/backend/app
+      - ./backend/tests:/workspace/backend/tests
       - ./corpus/raw:/workspace/corpus/raw
+      - ./corpus/coverage.yaml:/workspace/corpus/coverage.yaml
       - ./corpus/manifest.yaml:/workspace/corpus/manifest.yaml
       - ./eval/results:/workspace/eval/results
       - ./contracts:/workspace/contracts
+      - huggingface_cache:/root/.cache/huggingface
     ports:
       - "127.0.0.1:8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/v1/health', timeout=5).read()"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5m
     depends_on:
       db:
         condition: service_healthy
 
   frontend:
+    mem_limit: 256m
     build:
       context: .
       dockerfile: frontend/Dockerfile
@@ -46,7 +66,25 @@ services:
     ports:
       - "127.0.0.1:8080:80"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
+
+  source-monitor:
+    image: pramana-backend:local
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    command: ["python", "-m", "app.ingest.monitor", "--loop"]
+    env_file: .env
+    environment:
+      OLLAMA_BASE_URL: http://host.docker.internal:11434
+    mem_limit: 256m
+    volumes:
+      - ./backend/app:/workspace/backend/app
+      - ./corpus/raw:/workspace/corpus/raw
+      - ./corpus/manifest.yaml:/workspace/corpus/manifest.yaml:ro
+    restart: unless-stopped
 
 volumes:
   pramana_db_data:
+  huggingface_cache:

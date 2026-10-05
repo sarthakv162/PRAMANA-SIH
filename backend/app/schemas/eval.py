@@ -27,6 +27,7 @@ class EvalResults(ContractModel):
     run_id: str
     corpus_version: str
     n_questions: int
+    method: str | None = None
     conditions: list[EvalCondition]
     risk_coverage: list[RiskCoveragePoint] = Field(default_factory=list)
     generated_at: datetime

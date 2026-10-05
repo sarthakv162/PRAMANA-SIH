@@ -10,15 +10,19 @@ import asyncio
 import json
 from collections.abc import AsyncIterator
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Header
 from fastapi.responses import StreamingResponse
 
+from app.api.conversations import authorize_workspace
 from app.config import get_settings
+from app.core.db import SessionLocal
 from app.core.fixtures import load_fixture, load_fixture_text
+from app.history.service import require_conversation
 from app.orchestrator.graph import run_query
 from app.schemas.query import QueryRequest
 
 router = APIRouter(tags=["query"])
+_QUERY_SLOT = asyncio.Semaphore(1)
 
 
 def _mock_result_name(request: QueryRequest) -> str:
@@ -48,8 +52,9 @@ def _sse_encode(event: str, data: object) -> bytes:
 
 
 async def _stream_real_pipeline(request: QueryRequest) -> AsyncIterator[bytes]:
-    async for item in run_query(request):
-        yield _sse_encode(item["event"], item["data"])
+    async with _QUERY_SLOT:
+        async for item in run_query(request):
+            yield _sse_encode(item["event"], item["data"])
 
 
 @router.post(
@@ -62,8 +67,12 @@ async def _stream_real_pipeline(request: QueryRequest) -> AsyncIterator[bytes]:
         }
     },
 )
-async def query(request: QueryRequest) -> StreamingResponse:
+async def query(request: QueryRequest, x_demo_key: str = Header(default="")) -> StreamingResponse:
     settings = get_settings()
+    if request.conversation_id:
+        authorize_workspace(x_demo_key)
+        with SessionLocal() as session:
+            require_conversation(session, request.conversation_id)
     if settings.mock_mode:
         return StreamingResponse(
             _replay_sse_transcript(_mock_result_name(request)),

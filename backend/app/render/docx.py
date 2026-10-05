@@ -18,7 +18,7 @@ def render_docx(items: list[DossierItem], language: str) -> bytes:
     doc = Document()
     doc.add_heading("PRAMANA compliance dossier", level=0)
     meta_p = doc.add_paragraph()
-    meta_p.add_run(f"Generated: {datetime.now(UTC).isoformat()} · Language: {language}").italic = True
+    meta_p.add_run(f"Generated: {datetime.now(UTC).isoformat()} · Saved and source text preserved").italic = True
 
     for i, item in enumerate(items, start=1):
         doc.add_heading(f"{i}. {item.title}", level=1)
@@ -51,8 +51,7 @@ def render_docx(items: list[DossierItem], language: str) -> bytes:
 
         footer_p = doc.add_paragraph()
         footer_run = footer_p.add_run(
-            f"Request: {item.request_id} · Receipt: {item.receipt_id} · "
-            f"Entry hash: {item.entry_hash}"
+            f"Request: {item.request_id} · Receipt: {item.receipt_id} · Entry hash: {item.entry_hash}"
         )
         footer_run.font.size = Pt(8)
 

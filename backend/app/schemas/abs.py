@@ -1,5 +1,6 @@
 """ABS (Access and Benefit Sharing) checker objects. See §5.5."""
 
+from datetime import date
 from typing import Literal
 
 from pydantic import Field
@@ -19,10 +20,10 @@ class AbsResource(ContractModel):
 
 class AbsRequest(ContractModel):
     applicant_type: ApplicantType
-    activity: list[AbsActivity]
+    activity: list[AbsActivity] = Field(min_length=1)
     resources: list[AbsResource] = Field(default_factory=list)
     ipr_type: str | None = None
-    as_of: str | None = None
+    as_of: date | None = None
     language: Language = Language.AUTO
 
 
@@ -31,8 +32,8 @@ class AbsChecklistItem(ContractModel):
     title: str
     authority: Authority
     form: str | None = None
-    required: bool
-    exempt: bool
+    required: bool | None
+    exempt: bool | None
     exempt_reason: str | None = None
     timing: str | None = None
     detail: str
@@ -42,6 +43,7 @@ class AbsChecklistItem(ContractModel):
 class AbsResult(ContractModel):
     type: Literal["abs"] = "abs"
     summary: str
+    assessment_status: Literal["unassessed", "provisional"] = "unassessed"
     checklist: list[AbsChecklistItem]
     decision_path: DecisionPath
     evidence: dict[str, EvidenceSpan]

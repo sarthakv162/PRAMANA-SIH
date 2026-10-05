@@ -6,10 +6,7 @@ from __future__ import annotations
 
 from app.tk.ontology import normalize_ingredient
 
-NOTE = (
-    "TKDL access is restricted; this pack is for use by an authorised examiner "
-    "or via the applicant's counsel."
-)
+NOTE = "TKDL access is restricted; this pack is for use by an authorised examiner or via the applicant's counsel."
 
 # A61K 36/... is the IPC family for medicinal-plant preparations; a few common sub-classes
 # by broad indication, illustrative rather than exhaustive.

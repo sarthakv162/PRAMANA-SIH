@@ -1,5 +1,7 @@
 """Small request/response shapes not big enough for their own module. See §5.3."""
 
+from pydantic import Field, field_validator
+
 from app.schemas.base import ContractModel
 from app.schemas.enums import DossierFormat, Language
 
@@ -10,8 +12,15 @@ class SpeechAsrResponse(ContractModel):
 
 
 class SpeechTtsRequest(ContractModel):
-    text: str
+    text: str = Field(min_length=1, max_length=2500)
     language: Language = Language.AUTO
+
+    @field_validator("text")
+    @classmethod
+    def nonblank_speech(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("Speech text must not be blank")
+        return value.strip()
 
 
 class DossierRequest(ContractModel):

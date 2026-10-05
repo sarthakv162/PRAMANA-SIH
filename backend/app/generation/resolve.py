@@ -42,9 +42,7 @@ def _lookup(numbered: list[NumberedSpan], ref: str) -> NumberedSpan | None:
     return None
 
 
-def resolve_generation(
-    generation: GenerationResult, numbered: list[NumberedSpan]
-) -> ResolveOutcome:
+def resolve_generation(generation: GenerationResult, numbered: list[NumberedSpan]) -> ResolveOutcome:
     resolved: list[ResolvedClaim] = []
     dropped: list[str] = []
 

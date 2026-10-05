@@ -28,5 +28,5 @@ async def abs_check(request: AbsRequest, session: Session = Depends(get_session)
     if version is None:
         raise ApiError(code="no_corpus", message="No live corpus version is available.", status_code=503)
     corpus_version_id, corpus_version_label = version
-    as_of = date.fromisoformat(request.as_of) if request.as_of else date.today()
+    as_of = request.as_of or date.today()
     return build_abs_result(session, request, corpus_version_id, corpus_version_label, as_of)

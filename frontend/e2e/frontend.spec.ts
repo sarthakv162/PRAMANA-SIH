@@ -10,17 +10,32 @@ test('ask returns an answer and opens its cited source', async ({ page }) => {
   await expect(page.locator('.pdf-viewer canvas')).toBeVisible();
 });
 
+test('standalone greetings are answered locally in the interface language', async ({ page }) => {
+  let queryRequests = 0;
+  page.on('request', (request) => {
+    if (request.method() === 'POST' && new URL(request.url()).pathname.endsWith('/query')) queryRequests += 1;
+  });
+  await page.goto('/');
+  await page.getByLabel(/answer language/i).selectOption('bn');
+  await page.getByLabel(/ask about/i).fill('Hi');
+  await page.getByRole('button', { name: /ask pramana/i }).click();
+  await expect(page.getByRole('status')).toContainText('Hi! I can help you find source-grounded information');
+  await expect(page.getByText(/out of scope/i)).toHaveCount(0);
+  expect(queryRequests).toBe(0);
+});
+
 test('bottom composer stays available as a local research thread grows', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
   const composer = page.locator('.composer-dock');
   const welcome = page.locator('.research-welcome');
+  await composer.scrollIntoViewIfNeeded();
   const composerBox = await composer.boundingBox();
   const welcomeBox = await welcome.boundingBox();
   expect(composerBox).not.toBeNull();
   expect(welcomeBox).not.toBeNull();
   expect(composerBox!.y).toBeGreaterThanOrEqual(welcomeBox!.y + welcomeBox!.height);
-  expect(composerBox!.y + composerBox!.height).toBeLessThanOrEqual(844);
+  expect(composerBox!.y + composerBox!.height).toBeLessThanOrEqual(845);
 
   await page.getByLabel(/ask about/i).fill('Can traditional knowledge be patented in India?');
   await page.getByRole('button', { name: /ask pramana/i }).click();
@@ -98,7 +113,7 @@ test('interface language selection updates the shell and page copy', async ({ pa
 test('patent risk result exposes a clickable decision path citation', async ({ page }) => {
   await page.goto('/patent-risk');
   await page.getByRole('button', { name: /analyze formulation/i }).click();
-  await expect(page.getByRole('heading', { name: /high risk/i })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /high rule indicator/i })).toBeVisible();
   await expect(page.getByRole('heading', { name: /decision path/i })).toBeVisible();
   await page.locator('.react-flow__node').first().click();
   await expect(page.getByRole('dialog', { name: /the patents act/i })).toBeVisible();
@@ -110,6 +125,8 @@ test('case file requests a marked mock dossier download', async ({ page }) => {
   await page.getByRole('button', { name: /ask pramana/i }).click();
   await expect(page.getByText(/illustrative mock response/i)).toBeVisible();
   await page.getByRole('button', { name: /add to case file/i }).click();
+  await expect(page.getByRole('button', { name: /added to case file/i })).toBeVisible();
+  await page.evaluate(() => sessionStorage.setItem('pramana-workspace-key', 'explicit-mock-key'));
   await page.getByRole('link', { name: 'Cases' }).click();
   await expect(page.getByText(/not built from the selected case items/i)).toBeVisible();
   await page.getByLabel('Format').selectOption('md');

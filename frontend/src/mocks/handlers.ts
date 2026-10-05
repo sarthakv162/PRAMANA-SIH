@@ -15,7 +15,7 @@ import verifyTampered from '../../../contracts/fixtures/verify_tampered.json';
 import evalResults from '../../../contracts/fixtures/eval_results.json';
 import type { CorpusVersion, DocumentSummary, EscalationItem, HealthResponse, QueryRequest } from '../api/types';
 
-const apiMode = import.meta.env.VITE_API_MODE ?? 'mock';
+const apiMode = import.meta.env.VITE_API_MODE ?? 'live';
 const base = apiMode === 'mock' ? '/v1' : (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/v1').replace(/\/$/, '');
 
 function sse(events: { event: string; data: unknown }[]) {
@@ -42,7 +42,7 @@ const health: HealthResponse = {
   status: 'ok',
   mock_mode: true,
   corpus_version: '2026.09.28-a',
-  models: { llm: 'openai/gpt-oss-120b', embed: 'bge-m3', nli: 'mdeberta-v3-xnli' },
+  models: { llm: 'qwen3:4b', embed: 'qwen3-embedding:0.6b', nli: 'mdeberta-v3-xnli' },
 };
 
 const documents: DocumentSummary[] = [
@@ -61,7 +61,25 @@ const mockEscalations: EscalationItem[] = [
   { ticket_id: 'tkt_demo000001', request_id: refusalNoEvidence.request_id, contact: 'vaidya@example.in', note: 'Please confirm export duty figures.', status: 'open', created_at: '2026-09-30T10:20:00Z' },
 ];
 
+// In-memory fixture references exist only in the explicitly selected MSW mode.
+let mockCaseRefs: { request_id: string; summary: string; receipt_id: string }[] = [];
+
 export const handlers = [
+  http.get(`${base}/case-file`, () => HttpResponse.json(mockCaseRefs)),
+  http.post(`${base}/case-file/:id`, ({ params }) => {
+    const cards = [answerCardIn, answerCardBothHi, refusalNoEvidence, refusalLegalAdvice];
+    const card = cards.find((item) => item.request_id === params.id);
+    if (!card) return HttpResponse.json({ error: { message: 'Fixture result not found.' } }, { status: 404 });
+    if (!mockCaseRefs.some((ref) => ref.request_id === card.request_id)) {
+      const summary = 'sections' in card ? card.sections.flatMap((section) => section.claims)[0]?.text : card.message;
+      mockCaseRefs.push({ request_id: card.request_id, receipt_id: card.receipt_id, summary: summary ?? 'Fixture result' });
+    }
+    return HttpResponse.json(mockCaseRefs);
+  }),
+  http.delete(`${base}/case-file/:id`, ({ params }) => {
+    mockCaseRefs = mockCaseRefs.filter((ref) => ref.request_id !== params.id);
+    return HttpResponse.json(mockCaseRefs);
+  }),
   http.get(`${base}/health`, () => HttpResponse.json(health)),
   http.post(`${base}/query`, async ({ request }) => {
     const body = await request.json() as QueryRequest;
@@ -74,8 +92,9 @@ export const handlers = [
       { event: 'result', data: result }, { event: 'done', data: {} },
     ]);
   }),
+  // Explicit fixture mode exercises a short wizard path, independently of the real four-prompt classifier.
   // /classify is stateless (§6.8): the client resends all answers each call and the server
-  // replays the rule tree from the root. The real rule tree isn't implemented yet, so this
+  // replays the rule tree from the root. For this isolated fixture test, this
   // mock takes the simplest correct-looking path: no answers yet -> the one seeded question
   // fixture; any answer given -> a result (classical unless the wizard's first answer is "no",
   // in which case it returns the new-drug fixture, giving both ClassifyResult fixtures a way
@@ -120,10 +139,8 @@ export const handlers = [
     ? HttpResponse.json(mockEscalations)
     : HttpResponse.json({ error: { code: 'unauthorized', message: 'A demo key is required.', request_id: 'req_mock' } }, { status: 401 })),
   http.post(`${base}/speech/asr`, () => HttpResponse.json({ text: 'क्या पारंपरिक ज्ञान पर पेटेंट मिल सकता है?', language: 'hi' })),
-  // The real backend's /speech/tts always 503s until Bhashini keys exist (§6.12), and the
-  // frontend falls back to the browser speechSynthesis API — mirror that here instead of
-  // faking an mp3 fixture that doesn't exist on the contract.
-  http.post(`${base}/speech/tts`, () => new HttpResponse(null, { status: 503 })),
+  // Fixture mode does not pretend to generate Sarvam audio.
+  http.post(`${base}/speech/tts`, () => HttpResponse.json({ error: { code: 'mock_audio_unavailable', message: 'Sarvam read-aloud requires live mode and a configured backend key.', request_id: 'req_mock' } }, { status: 503 })),
   // MSW can return a real text/markdown demo document. Binary PDF/DOCX exports run through
   // the backend's fixture-backed renderers; avoid returning fake bytes with those media types.
   http.post(`${base}/dossier`, async ({ request }) => {

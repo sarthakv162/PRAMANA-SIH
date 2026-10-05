@@ -9,10 +9,12 @@ import sys
 
 
 def configure_logging(level: int = logging.INFO) -> None:
+    # httpx INFO records include the complete URL. WIPO Lex uses short-lived signed
+    # download URLs, so forwarding transport logs would disclose their query signatures.
+    logging.getLogger("httpx").setLevel(logging.WARNING)
+    logging.getLogger("httpcore").setLevel(logging.WARNING)
     handler = logging.StreamHandler(sys.stdout)
-    handler.setFormatter(
-        logging.Formatter("%(asctime)s %(levelname)s %(name)s %(message)s")
-    )
+    handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s %(message)s"))
     root = logging.getLogger()
     root.setLevel(level)
     root.handlers = [handler]

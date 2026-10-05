@@ -9,29 +9,57 @@ from __future__ import annotations
 import re
 
 _ONES = {
-    "zero": 0, "one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7,
-    "eight": 8, "nine": 9, "ten": 10, "eleven": 11, "twelve": 12, "thirteen": 13,
-    "fourteen": 14, "fifteen": 15, "sixteen": 16, "seventeen": 17, "eighteen": 18,
+    "zero": 0,
+    "one": 1,
+    "two": 2,
+    "three": 3,
+    "four": 4,
+    "five": 5,
+    "six": 6,
+    "seven": 7,
+    "eight": 8,
+    "nine": 9,
+    "ten": 10,
+    "eleven": 11,
+    "twelve": 12,
+    "thirteen": 13,
+    "fourteen": 14,
+    "fifteen": 15,
+    "sixteen": 16,
+    "seventeen": 17,
+    "eighteen": 18,
     "nineteen": 19,
 }
 _TENS = {
-    "twenty": 20, "thirty": 30, "forty": 40, "fifty": 50, "sixty": 60, "seventy": 70,
-    "eighty": 80, "ninety": 90,
+    "twenty": 20,
+    "thirty": 30,
+    "forty": 40,
+    "fifty": 50,
+    "sixty": 60,
+    "seventy": 70,
+    "eighty": 80,
+    "ninety": 90,
 }
 _MULTIPLIERS = {"hundred": 100, "thousand": 1000, "lakh": 100_000, "crore": 10_000_000}
 _ORDINAL_WORDS = {
-    "first": 1, "second": 2, "third": 3, "fourth": 4, "fifth": 5, "sixth": 6, "seventh": 7,
-    "eighth": 8, "ninth": 9, "tenth": 10, "twentieth": 20, "thirtieth": 30,
+    "first": 1,
+    "second": 2,
+    "third": 3,
+    "fourth": 4,
+    "fifth": 5,
+    "sixth": 6,
+    "seventh": 7,
+    "eighth": 8,
+    "ninth": 9,
+    "tenth": 10,
+    "twentieth": 20,
+    "thirtieth": 30,
 }
 
 _ALL_NUMBER_WORDS = sorted({*_ONES, *_TENS, *_MULTIPLIERS, *_ORDINAL_WORDS}, key=len, reverse=True)
 _CONTINUATION_WORDS = sorted({*_ONES, *_TENS, *_MULTIPLIERS}, key=len, reverse=True)
 _WORD_NUMBER_RE = re.compile(
-    r"\b(?:"
-    + "|".join(_ALL_NUMBER_WORDS)
-    + r")(?:[\s-](?:"
-    + "|".join(_CONTINUATION_WORDS)
-    + r"))*\b",
+    r"\b(?:" + "|".join(_ALL_NUMBER_WORDS) + r")(?:[\s-](?:" + "|".join(_CONTINUATION_WORDS) + r"))*\b",
     re.IGNORECASE,
 )
 
@@ -39,8 +67,8 @@ _DIGIT_NUMBER_RE = re.compile(r"\b\d[\d,]*(?:\.\d+)?\s*%?\b|₹\s?\d[\d,]*|(?:Rs
 _ORDINAL_DIGIT_RE = re.compile(r"\b\d+(?:st|nd|rd|th)\b", re.IGNORECASE)
 _YEAR_RE = re.compile(r"\b(1[89]\d{2}|20\d{2})\b")
 _SECTION_REF_RE = re.compile(
-    r"\b(?:section|sections|rule|rules|clause|sub-section|subsection)\s+"
-    r"\d+[A-Za-z]*(?:\([a-zA-Z0-9]+\))*",
+    r"(?<!\w)(?:sections?|rules?|clauses?|sub[\s-]?sections?|secs?\.?|s\.?|§)\s*"
+    r"(\d+[A-Za-z]*(?:\([a-zA-Z0-9]+\))*)",
     re.IGNORECASE,
 )
 
@@ -99,34 +127,66 @@ def normalize_numbers(text: str) -> set[str]:
     return found
 
 
-def numbers_ok(claim_text: str, premise: str) -> bool:
-    """Every number in the claim must be traceable to the premise (§6.7 Numbers guard)."""
-    claim_numbers = normalize_numbers(claim_text)
+def _cited_titles_in_claim(claim_text: str, citation_metadata: str) -> str:
+    """Allow a source year only when the claim names that cited document title."""
+    normalized_claim = claim_text.casefold()
+    titles: list[str] = []
+    for label in citation_metadata.splitlines():
+        title = label.split(" — ", maxsplit=1)[0].strip()
+        without_article = re.sub(r"^the\s+", "", title, flags=re.IGNORECASE)
+        if _YEAR_RE.search(title) and any(
+            variant and variant.casefold() in normalized_claim for variant in (title, without_article)
+        ):
+            titles.append(title)
+    return " ".join(titles)
+
+
+def numbers_ok(claim_text: str, premise: str, citation_metadata: str = "") -> bool:
+    """Every substantive number must be traceable to the premise (§6.7 Numbers guard).
+
+    Section/rule identifiers are checked separately by `section_refs_ok`; validated source
+    labels may also substantiate an Act-title year (e.g. "Patents Act, 1970"). Neither source
+    labels nor locator numbers are added to the NLI premise.
+    """
+    cited_titles = _cited_titles_in_claim(claim_text, citation_metadata)
+    claim_numbers = normalize_numbers(_SECTION_REF_RE.sub(" ", claim_text))
     if not claim_numbers:
         return True
-    premise_numbers = normalize_numbers(premise)
+    source = f"{premise} {cited_titles}"
+    premise_numbers = normalize_numbers(_SECTION_REF_RE.sub(" ", source))
     return claim_numbers.issubset(premise_numbers)
 
 
-def dates_ok(claim_text: str, premise: str) -> bool:
+def dates_ok(claim_text: str, premise: str, citation_metadata: str = "") -> bool:
     """Every year in the claim must appear in the premise (§6.7 Dates/years guard)."""
     claim_years = set(_YEAR_RE.findall(claim_text))
     if not claim_years:
         return True
-    premise_years = set(_YEAR_RE.findall(premise))
+    cited_titles = _cited_titles_in_claim(claim_text, citation_metadata)
+    premise_years = set(_YEAR_RE.findall(f"{premise} {cited_titles}"))
     return claim_years.issubset(premise_years)
 
 
-def section_refs_ok(claim_text: str, premise: str) -> bool:
-    """Every "section X"/"rule Y" the claim names must be in the premise (§6.7)."""
+def section_refs_ok(claim_text: str, premise: str, citation_refs: set[str] | None = None) -> bool:
+    """Every section/rule named by a claim must occur in cited text or its locator.
+
+    Statutory excerpts often start at a clause and omit the parent section heading. In that
+    case, the server-validated section key attached to the cited span is valid locator
+    evidence for the section reference; it does not add any substantive text to the NLI
+    premise.
+    """
 
     def _normalize(ref: str) -> str:
         return re.sub(r"\s+", " ", ref.strip().lower())
 
-    claim_refs = {_normalize(m.group()) for m in _SECTION_REF_RE.finditer(claim_text)}
+    def _canonical(match: re.Match[str]) -> str:
+        return f"section {match.group(1).lower()}"
+
+    claim_refs = {_normalize(_canonical(m)) for m in _SECTION_REF_RE.finditer(claim_text)}
     if not claim_refs:
         return True
-    premise_refs = {_normalize(m.group()) for m in _SECTION_REF_RE.finditer(premise)}
+    premise_refs = {_normalize(_canonical(m)) for m in _SECTION_REF_RE.finditer(premise)}
+    premise_refs.update(_normalize(ref) for ref in (citation_refs or set()))
     return claim_refs.issubset(premise_refs)
 
 
@@ -149,7 +209,7 @@ def negation_ok(claim_text: str, premise: str) -> bool:
 
 
 def modal_strength_matches(claim_text: str, premise: str) -> bool:
-    """"shall" (mandatory) vs "may" (discretionary) mismatch between claim and premise."""
+    """ "shall" (mandatory) vs "may" (discretionary) mismatch between claim and premise."""
     premise_shall = bool(_MODAL_SHALL.search(premise))
     premise_may = bool(_MODAL_MAY.search(premise))
     claim_shall = bool(_MODAL_SHALL.search(claim_text))

@@ -1,4 +1,10 @@
 .env
+.env.deploy
+.env.deploy.*
+backups/
+*.dump
+demo-seed.tar.gz
+deploy/data/
 *.pyc
 __pycache__/
 .venv/

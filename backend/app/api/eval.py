@@ -25,7 +25,5 @@ async def eval_latest() -> EvalResults:
     if settings.mock_mode:
         return EvalResults.model_validate(load_fixture("eval_results.json"))
     if not RESULTS_PATH.exists():
-        raise ApiError(
-            code="no_eval_run", message="Run `make eval` first.", status_code=404
-        )
+        raise ApiError(code="no_eval_run", message="Run `make eval` first.", status_code=404)
     return EvalResults.model_validate(json.loads(RESULTS_PATH.read_text()))

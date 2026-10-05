@@ -25,10 +25,13 @@ def run(session: Session, state: RequestState, result_payload: dict[str, Any]) -
         query_hash=state.query_hash,
         cited_spans=[item for item in state.evidence_pack if _cited(item, result_payload)],
         model_ids=ModelIds(
-            llm=settings.llm_model, embed=settings.embed_model, nli=settings.nli_model
+            llm=settings.llm_model if state.generation is not None else "none",
+            embed=settings.embed_model if state.used_dense_retrieval else "none",
+            nli=settings.nli_model if state.resolved_claims else "none",
         ),
         prompt_version=PROMPT_VERSION,
         result_payload=result_payload,
+        conversation_id=state.request.conversation_id,
     )
     return receipt.id
 

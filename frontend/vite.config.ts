@@ -23,12 +23,20 @@ export default defineConfig(({ mode }) => {
           { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' },
         ],
       },
-      workbox: { navigateFallback: '/index.html', globPatterns: ['**/*.{js,css,html,svg,png,woff2}'] },
+      workbox: {
+        navigateFallback: '/index.html', globPatterns: ['**/*.{js,mjs,css,html,svg,png,woff2}'],
+        manifestTransforms: [async (entries) => ({
+          manifest: entries.map((entry) => entry.url.endsWith('.mjs')
+            ? { ...entry, revision: `${entry.revision ?? entry.url}-module-mime-v1` } : entry),
+          warnings: [],
+        })],
+      },
     }),
   ],
+  preview: { proxy: { '/v1': { target: proxyTarget, changeOrigin: true } } },
   server: {
     host: '0.0.0.0',
-    ...(env.VITE_API_MODE === 'live' ? { proxy: { '/v1': { target: proxyTarget, changeOrigin: true } } } : {}),
+    ...(env.VITE_API_MODE !== 'mock' ? { proxy: { '/v1': { target: proxyTarget, changeOrigin: true } } } : {}),
   },
   };
 });

@@ -1,5 +1,5 @@
 # PRAMANA — Claude Code guide
-Read docs/IMPLEMENTATION_PLAN.md first (source of truth). Contract: contracts/ + backend/app/schemas.
+Read PRAMANA_IMPLEMENTATION_PLAN.md first (canonical source of truth). Contract: contracts/ + backend/app/schemas.
 
 ## Rules
 - Contract-first: change Pydantic schemas + fixtures + CHANGELOG together; run `make contracts`.

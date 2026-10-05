@@ -11,14 +11,20 @@ import sqlalchemy as sa
 from sqlalchemy.orm import Session
 
 from app.orchestrator.state import RequestState
-from app.retrieval import legal_graph, repo, rrf
+from app.retrieval import coverage, legal_graph, repo, rrf
 
 
 def run(session: Session, state: RequestState) -> list[sa.Row[Any]]:
+    requested = coverage.requested_sources(state.query_en)
+    if requested:
+        available = {d.short_key for d in repo.documents_for_version(session, state.corpus_version_id)}
+        if requested - available:
+            # Related provisions cannot answer a question about an absent instrument.
+            return []
     if state.direct_section_key:
-        section = repo.fetch_section_by_key(
-            session, state.direct_section_key, state.corpus_version_id
-        )
+        if requested and state.direct_section_key.split("#", 1)[0] not in requested:
+            return []
+        section = repo.fetch_section_by_key(session, state.direct_section_key, state.corpus_version_id)
         if section is not None:
             chunk_ids = [
                 str(row.id)
@@ -39,17 +45,17 @@ def run(session: Session, state: RequestState) -> list[sa.Row[Any]]:
             state.corpus_version_id,
             state.jurisdictions,
             state.as_of,
-            state.query_en,
+            state.query_en + ("\nPrior topic: " + state.conversation_context if state.conversation_context else ""),
+            doc_keys=sorted(requested) if requested else None,
         )
+        state.used_dense_retrieval = any(c.scores.get("dense", 0) > 0 for c in candidates)
         state.retrieval_margin = rrf.top1_top2_margin(candidates)
         chunk_ids = [c.chunk_id for c in candidates]
 
     if not chunk_ids:
         return []
 
-    rows = repo.fetch_chunks_by_ids(
-        session, chunk_ids, state.corpus_version_id, state.jurisdictions, state.as_of
-    )
+    rows = repo.fetch_chunks_by_ids(session, chunk_ids, state.corpus_version_id, state.jurisdictions, state.as_of)
     section_ids = list({str(r.section_id) for r in rows})
     related_ids = legal_graph.attach_related_chunks(
         session, section_ids, state.corpus_version_id, state.jurisdictions, state.as_of

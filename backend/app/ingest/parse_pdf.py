@@ -36,14 +36,14 @@ class Page:
     index: int  # 0-based, matches PyMuPDF page index
     printed_number: int  # 1-based page as a human would cite it
     raw_text: str
-    text: str  # cleaned (footnote/page-number stripped), single-spaced
+    text: str  # cleaned (footnote/page-number stripped), with whitespace normalized
     density: float  # chars per page-area unit; low density ⇒ likely a scanned/image page
 
 
 @dataclass
 class ParsedDocument:
     pages: list[Page]
-    full_text: str  # all pages' cleaned text, joined with a single space
+    full_text: str  # all pages' cleaned text, with one space between pages
     page_offsets: list[int]  # page_offsets[i] = start char of pages[i].text in full_text
 
 
@@ -89,7 +89,7 @@ def parse_pdf(pdf_path: str) -> ParsedDocument:
     for pg in pages:
         page_offsets.append(cursor)
         full_text_parts.append(pg.text)
-        cursor += len(pg.text) + 1  # +1 for the joining space
+        cursor += len(pg.text) + 1  # +1 for the page-separating space
     full_text = " ".join(full_text_parts)
 
     return ParsedDocument(pages=pages, full_text=full_text, page_offsets=page_offsets)

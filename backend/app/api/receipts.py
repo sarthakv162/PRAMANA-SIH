@@ -28,9 +28,7 @@ def _mock_receipt(receipt_id: str) -> Receipt | None:
         payload = load_fixture(fixture_name)
         if payload.get("receipt_id") == receipt_id:
             receipt = Receipt.model_validate(load_fixture("receipt.json"))
-            cited_spans = payload.get("evidence") or {
-                span["id"]: span for span in payload.get("nearest_sources", [])
-            }
+            cited_spans = payload.get("evidence") or {span["id"]: span for span in payload.get("nearest_sources", [])}
             return receipt.model_copy(
                 update={
                     "id": receipt_id,
@@ -47,9 +45,7 @@ async def get_receipt(receipt_id: str, session: Session = Depends(get_session)) 
     if settings.mock_mode:
         receipt = _mock_receipt(receipt_id)
         if receipt_id == _TAMPERED_ID:
-            receipt = Receipt.model_validate(load_fixture("receipt.json")).model_copy(
-                update={"id": _TAMPERED_ID}
-            )
+            receipt = Receipt.model_validate(load_fixture("receipt.json")).model_copy(update={"id": _TAMPERED_ID})
         if receipt is None:
             raise HTTPException(status_code=404, detail="receipt not found")
         return receipt
@@ -61,9 +57,7 @@ async def get_receipt(receipt_id: str, session: Session = Depends(get_session)) 
 
 
 @router.post("/receipts/{receipt_id}/verify", response_model=VerifyResult)
-async def verify_receipt(
-    receipt_id: str, session: Session = Depends(get_session)
-) -> VerifyResult:
+async def verify_receipt(receipt_id: str, session: Session = Depends(get_session)) -> VerifyResult:
     settings = get_settings()
     if settings.mock_mode:
         fixture_name = "verify_tampered.json" if receipt_id == _TAMPERED_ID else "verify_ok.json"

@@ -28,9 +28,7 @@ _QUOTE_STYLE = ParagraphStyle(
     borderPadding=6,
     backColor=HexColor("#f4f4f4"),
 )
-_META_STYLE = ParagraphStyle(
-    "Meta", parent=_STYLES["Normal"], textColor=HexColor("#555555"), fontSize=8
-)
+_META_STYLE = ParagraphStyle("Meta", parent=_STYLES["Normal"], textColor=HexColor("#555555"), fontSize=8)
 
 
 def _p(text: str, style_name: str = "Normal") -> Paragraph:
@@ -38,15 +36,30 @@ def _p(text: str, style_name: str = "Normal") -> Paragraph:
 
 
 def render_pdf(items: list[DossierItem], language: str) -> bytes:
+    # Built-in PDF fonts cover Windows-1252, not Indic scripts. Fail clearly rather than
+    # producing a download with missing glyphs; DOCX/Markdown preserve Unicode text.
+    for item in items:
+        for text in [
+            item.title,
+            item.note or "",
+            *item.summary_lines,
+            *[q.text for q in item.quotes],
+            *[q.citation_label for q in item.quotes],
+        ]:
+            text.encode("cp1252")
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(
-        buffer, pagesize=A4, topMargin=20 * mm, bottomMargin=20 * mm,
-        leftMargin=18 * mm, rightMargin=18 * mm,
+        buffer,
+        pagesize=A4,
+        topMargin=20 * mm,
+        bottomMargin=20 * mm,
+        leftMargin=18 * mm,
+        rightMargin=18 * mm,
     )
     story: list[Flowable] = [
         Paragraph("PRAMANA compliance dossier", _STYLES["Title"]),
         Paragraph(
-            escape(f"Generated: {datetime.now(UTC).isoformat()} · Language: {language}"),
+            escape(f"Generated: {datetime.now(UTC).isoformat()} · Saved and source text preserved"),
             _META_STYLE,
         ),
         Spacer(1, 10),
@@ -83,10 +96,7 @@ def render_pdf(items: list[DossierItem], language: str) -> bytes:
 
         story.append(
             Paragraph(
-                escape(
-                    f"Request: {item.request_id} · Receipt: {item.receipt_id} · "
-                    f"Entry hash: {item.entry_hash}"
-                ),
+                escape(f"Request: {item.request_id} · Receipt: {item.receipt_id} · Entry hash: {item.entry_hash}"),
                 _META_STYLE,
             )
         )

@@ -7,7 +7,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-os.environ.setdefault("MOCK_MODE", "1")
+os.environ["MOCK_MODE"] = "1"
 os.environ.setdefault(
     "FIXTURES_DIR", str(Path(__file__).resolve().parents[2] / "contracts" / "fixtures")
 )

@@ -39,9 +39,7 @@ def require_admin_key(x_demo_key: str | None = Header(default=None, alias="X-Dem
 
 
 @router.post("/escalations", response_model=EscalationResponse)
-async def create_escalation(
-    request: EscalationRequest, session: Session = Depends(get_session)
-) -> EscalationResponse:
+async def create_escalation(request: EscalationRequest, session: Session = Depends(get_session)) -> EscalationResponse:
     settings = get_settings()
     if settings.mock_mode:
         ticket_id = f"tkt_{uuid.uuid4().hex[:12]}"

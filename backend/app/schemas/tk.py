@@ -47,8 +47,7 @@ class TkdlQuery(ContractModel):
     ipc: list[str]
     text: str
     note: str = (
-        "TKDL access is restricted; this pack is for use by an authorised examiner "
-        "or via the applicant's counsel."
+        "TKDL access is restricted; this pack is for use by an authorised examiner or via the applicant's counsel."
     )
 
 

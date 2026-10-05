@@ -8,8 +8,8 @@ Requires Node 22 or newer.
 
 ```bash
 npm ci
-npm run dev                 # VITE_API_MODE defaults to mock/MSW
-VITE_API_MODE=live npm run dev  # same-origin /v1 proxy to localhost:8000
+npm run dev                    # live /v1 proxy to localhost:8000
+VITE_API_MODE=mock npm run dev  # explicitly labelled MSW fixture mode
 ```
 
 For the connected demo, use the root Docker Compose workflow instead: `cd ..`, copy `.env.example` to `.env`, and run `make up`. The app's Mock data/Live API status is read from the backend `/v1/health` response, so it reflects server mode rather than the Vite build flag.
@@ -21,7 +21,10 @@ MSW fixtures are explicitly illustrative. In isolated frontend mock mode, Markdo
 ```bash
 npm run lint
 npm test
-npm run test:e2e
+npm run test:e2e               # explicit mock UI checks
+# Real production checks (from the root, with Docker + native Ollama running):
+# .venv/bin/python scripts/check_live.py
+# .venv/bin/python scripts/run-browser-tests.py
 npm run build
 npm run types:generate   # after `make contracts` at repository root
 ```

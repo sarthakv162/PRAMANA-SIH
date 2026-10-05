@@ -46,8 +46,16 @@ _NON_QA_MESSAGES = {
 }
 
 _ALL_STAGES = [
-    StageName.INTAKE, StageName.FRAME, StageName.CACHE, StageName.ROUTE, StageName.RETRIEVE,
-    StageName.RESOLVE, StageName.GENERATE, StageName.VERIFY, StageName.RENDER, StageName.AUDIT,
+    StageName.INTAKE,
+    StageName.FRAME,
+    StageName.CACHE,
+    StageName.ROUTE,
+    StageName.RETRIEVE,
+    StageName.RESOLVE,
+    StageName.GENERATE,
+    StageName.VERIFY,
+    StageName.RENDER,
+    StageName.AUDIT,
 ]
 
 
@@ -123,6 +131,9 @@ async def run_query(request: QueryRequest) -> AsyncIterator[dict[str, Any]]:
             async for event in runner.run(StageName.ROUTE, route.run, state, deadline=state.deadline):
                 yield event
 
+            # Regulatory tool intents remain in scope for evidence-grounded Q&A.
+            if state.intent in {"classify", "patent_risk", "abs", "tk"}:
+                state.intent = "qa"
             card: AnswerCard | RefusalCard
             if state.intent == "legal_advice":
                 card = build_refusal(
@@ -176,55 +187,92 @@ async def run_query(request: QueryRequest) -> AsyncIterator[dict[str, Any]]:
                             yield event
                     except LlmError as exc:
                         logger.warning(f"request {request_id}: generation unavailable ({exc})")
-                        state.resolved_claims = []
-                        state.gaps = ["Generation is unavailable — showing sources only."]
                         runner.done.add(StageName.GENERATE)
                         yield {
                             "event": "stage",
                             "data": _stage_event(StageName.GENERATE, StageStatus.FAILED),
                         }
+                        state.generation_unavailable = True
 
-                    confidence_holder: list[Any] = []
-
-                    async def _verify(s: RequestState) -> None:
-                        confidence_holder.append(verify_node.run(s))
-
-                    async for event in runner.run(StageName.VERIFY, _verify, state, deadline=state.deadline):
-                        yield event
-                    confidence = confidence_holder[0]
-
-                    if confidence.abstain or not state.verified_claims:
+                    if state.generation_unavailable:
                         card = build_refusal(
                             state,
-                            RefusalReason.LOW_CONFIDENCE,
-                            "I found related sources but couldn't verify a confident answer "
-                            "from them.",
+                            RefusalReason.GENERATION_UNAVAILABLE,
+                            "Local generation is unavailable. The excerpts below are retrieved legal evidence; "
+                            "no synthesized answer has been verified.",
                             receipt_id="",
                         )
                     else:
-                        timings_ms = TimingsMs(
-                            intake=runner.timings.get("intake", 0),
-                            retrieve=runner.timings.get("retrieve", 0),
-                            generate=runner.timings.get("generate", 0),
-                            verify=runner.timings.get("verify", 0),
-                            total=0,
-                        )
-                        card = build_answer(state, confidence, timings_ms, receipt_id="")
+                        confidence_holder: list[Any] = []
+
+                        async def _verify(s: RequestState) -> None:
+                            confidence_holder.append(await run_in_threadpool(verify_node.run, s))
+
+                        async for event in runner.run(StageName.VERIFY, _verify, state, deadline=state.deadline):
+                            yield event
+                        confidence = confidence_holder[0]
+
+                        # One repair against the same local model and evidence pack.
+                        # Verifier failures supply feedback, never a prewritten answer.
+                        if state.resolved_claims and not state.verified_claims:
+                            rejected_count = state.dropped_claims
+                            try:
+                                async for event in runner.run(
+                                    StageName.GENERATE, generate.run, state, deadline=state.deadline
+                                ):
+                                    yield event
+                                confidence_holder.clear()
+                                async for event in runner.run(
+                                    StageName.VERIFY, _verify, state, deadline=state.deadline
+                                ):
+                                    yield event
+                                confidence = confidence_holder[0]
+                                state.dropped_claims += rejected_count
+                            except LlmError:
+                                state.generation_unavailable = True
+
+                        if state.generation_unavailable:
+                            card = build_refusal(
+                                state,
+                                RefusalReason.GENERATION_UNAVAILABLE,
+                                "Local generation is unavailable. These source excerpts "
+                                "have not produced verified synthesis.",
+                                receipt_id="",
+                            )
+                        elif not state.resolved_claims:
+                            card = build_refusal(
+                                state,
+                                RefusalReason.NO_EVIDENCE,
+                                "The indexed documents do not provide evidence answering this question.",
+                                receipt_id="",
+                            )
+                        elif confidence.abstain or not state.verified_claims:
+                            card = build_refusal(
+                                state,
+                                RefusalReason.LOW_CONFIDENCE,
+                                "I found related sources but couldn't verify a confident answer from them.",
+                                receipt_id="",
+                            )
+                        else:
+                            timings_ms = TimingsMs(
+                                intake=runner.timings.get("intake", 0),
+                                retrieve=runner.timings.get("retrieve", 0),
+                                generate=runner.timings.get("generate", 0),
+                                verify=runner.timings.get("verify", 0),
+                                total=0,
+                            )
+                            card = build_answer(state, confidence, timings_ms, receipt_id="")
 
             runner.done.add(StageName.RENDER)
             yield {"event": "stage", "data": _stage_event(StageName.RENDER, StageStatus.DONE)}
 
             if isinstance(card, AnswerCard):
                 total_ms = int((time.monotonic() - t0) * 1000)
-                card = card.model_copy(
-                    update={"timings_ms": card.timings_ms.model_copy(update={"total": total_ms})}
-                )
+                card = card.model_copy(update={"timings_ms": card.timings_ms.model_copy(update={"total": total_ms})})
 
             async def _audit(s: RequestState) -> None:
                 nonlocal card
-                receipt_id = await run_in_threadpool(
-                    audit_node.run, session, s, card.model_dump(mode="json")
-                )
+                receipt_id = await run_in_threadpool(audit_node.run, session, s, card.model_dump(mode="json"))
                 card = card.model_copy(update={"receipt_id": receipt_id})
 
             async for event in runner.run(StageName.AUDIT, _audit, state):
@@ -236,6 +284,13 @@ async def run_query(request: QueryRequest) -> AsyncIterator[dict[str, Any]]:
             yield {"event": "result", "data": card.model_dump(mode="json")}
             yield {"event": "done", "data": {}}
 
+        except LlmError as exc:
+            logger.warning(f"request {request_id}: Local generation unavailable ({exc})")
+            yield {
+                "event": "error",
+                "data": {"code": "llm_unavailable", "message": str(exc), "request_id": request_id},
+            }
+            yield {"event": "done", "data": {}}
         except NoLiveCorpusError as exc:
             logger.error(f"request {request_id}: {exc}")
             yield {
@@ -254,9 +309,7 @@ async def run_query(request: QueryRequest) -> AsyncIterator[dict[str, Any]]:
             # so append a receipt without re-checking the exhausted user-facing deadline.
             # This preserves the receipt invariant and makes the refusal auditable.
             try:
-                receipt_id = await run_in_threadpool(
-                    audit_node.run, session, state, fallback.model_dump(mode="json")
-                )
+                receipt_id = await run_in_threadpool(audit_node.run, session, state, fallback.model_dump(mode="json"))
                 fallback = fallback.model_copy(update={"receipt_id": receipt_id})
                 runner.done.add(StageName.AUDIT)
             except Exception:
@@ -265,13 +318,13 @@ async def run_query(request: QueryRequest) -> AsyncIterator[dict[str, Any]]:
                 yield event
             yield {"event": "result", "data": fallback.model_dump(mode="json")}
             yield {"event": "done", "data": {}}
-        except Exception as exc:  # last-resort safety net — never leave the SSE stream hanging
+        except Exception:  # last-resort safety net — never leave the SSE stream hanging
             logger.exception(f"request {request_id}: unhandled error in query pipeline")
             yield {
                 "event": "error",
                 "data": {
                     "code": "internal_error",
-                    "message": f"{type(exc).__name__}: {exc}",
+                    "message": "The query could not be completed. Check the server logs using this request ID.",
                     "request_id": request_id,
                 },
             }

@@ -15,7 +15,7 @@ def render_md(items: list[DossierItem], language: str) -> bytes:
         "# PRAMANA compliance dossier",
         "",
         f"Generated: {datetime.now(UTC).isoformat()}",
-        f"Language: {language}",
+        "Language: preserved from saved results and original source text; no export translation.",
         "",
         "---",
         "",
@@ -50,8 +50,7 @@ def render_md(items: list[DossierItem], language: str) -> bytes:
                 for text_line in quote.text.splitlines() or [""]:
                     lines.append(f"> {text_line}")
                 lines.append("")
-        lines.append(f"Request: `{item.request_id}` · Receipt: `{item.receipt_id}` "
-                      f"· Entry hash: `{item.entry_hash}`")
+        lines.append(f"Request: `{item.request_id}` · Receipt: `{item.receipt_id}` · Entry hash: `{item.entry_hash}`")
         lines.append("")
         lines.append("---")
         lines.append("")

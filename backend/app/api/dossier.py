@@ -8,17 +8,20 @@ answer.
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, Response
+from fastapi import APIRouter, Depends, Header, Response
 from sqlalchemy.orm import Session
 
+from app.api.conversations import authorize_workspace
 from app.audit.receipts import StoredResult, latest_result_for_request
 from app.config import get_settings
 from app.core.db import get_session
+from app.core.errors import ApiError
 from app.core.fixtures import load_fixture
 from app.render.docx import render_docx
 from app.render.dossier import DossierItem, build_dossier_item, missing_item
 from app.render.md import render_md
 from app.render.pdf import render_pdf
+from app.schemas.enums import Language
 from app.schemas.misc import DossierRequest
 
 router = APIRouter(tags=["dossier"])
@@ -56,17 +59,31 @@ def _mock_dossier_item(request_id: str) -> DossierItem:
 
 @router.post("/dossier")
 async def build_dossier(
-    request: DossierRequest, session: Session = Depends(get_session)
+    request: DossierRequest, x_demo_key: str = Header(default=""), session: Session = Depends(get_session)
 ) -> Response:
     settings = get_settings()
+    if request.language not in {Language.AUTO, Language.EN}:
+        raise ApiError(
+            "dossier_translation_unavailable",
+            "Dossiers preserve saved results and original source text. Choose automatic language to export them.",
+            422,
+        )
     if settings.mock_mode:
         items = [_mock_dossier_item(request_id) for request_id in request.items]
     else:
+        authorize_workspace(x_demo_key)
         items = [
             build_dossier_item(stored)
             if (stored := latest_result_for_request(session, request_id)) is not None
             else missing_item(request_id)
             for request_id in request.items
         ]
-    content = _RENDERERS[request.format.value](items, request.language.value)
+    try:
+        content = _RENDERERS[request.format.value](items, request.language.value)
+    except UnicodeEncodeError:
+        raise ApiError(
+            "pdf_font_unavailable",
+            "This PDF font cannot render some saved characters. Export DOCX or Markdown to preserve the text.",
+            422,
+        ) from None
     return Response(content=content, media_type=_MEDIA_TYPES[request.format.value])

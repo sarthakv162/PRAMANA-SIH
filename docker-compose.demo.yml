@@ -1,0 +1,38 @@
+# Simple public demo on a Linux server, including Oracle Always Free ARM.
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_DB: pramana
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Run bash deploy/setup-demo.sh first}
+    volumes:
+      - demo_db:/var/lib/postgresql/data
+    mem_limit: 768m
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d pramana"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD:?Run setup first}@db:5432/pramana
+      PUBLIC_DEMO_MODE: "1"
+      MOCK_MODE: "0"
+      SARVAM_API_KEY: ${SARVAM_API_KEY:-}
+    ports:
+      - "80:8080"
+    volumes:
+      - ./deploy/data:/data
+    mem_limit: 9g
+    cpus: 2
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+volumes:
+  demo_db:

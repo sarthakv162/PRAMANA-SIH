@@ -37,9 +37,7 @@ router = APIRouter(tags=["tk"])
 
 
 @router.post("/tk-radar", response_model=TkRadar)
-async def tk_radar(
-    formulation: Formulation, session: Session = Depends(get_session)
-) -> TkRadar:
+async def tk_radar(formulation: Formulation, session: Session = Depends(get_session)) -> TkRadar:
     settings = get_settings()
     if settings.mock_mode:
         return TkRadar.model_validate(load_fixture("tk_radar.json"))
@@ -83,9 +81,7 @@ async def tk_radar(
         if m.similarity > 0
     ]
 
-    radar = RadarData(
-        axes=[RadarAxis(label=m.formulation.name, value=m.similarity) for m in match_results[:8]]
-    )
+    radar = RadarData(axes=[RadarAxis(label=m.formulation.name, value=m.similarity) for m in match_results[:8]])
 
     tkdl = build_tkdl_query(names, formulation.intended_use)
     watchlist_hits = [

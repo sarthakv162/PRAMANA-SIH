@@ -16,9 +16,7 @@ from app.audit.rule_receipts import record_rule_engine_result
 from app.rules.engine import resolve_citations
 
 
-def test_rule_engine_receipt_resolves_and_verifies(
-    db_session: Session, live_corpus_version: tuple[str, str]
-) -> None:
+def test_rule_engine_receipt_resolves_and_verifies(db_session: Session, live_corpus_version: tuple[str, str]) -> None:
     cv_id, cv_label = live_corpus_version
     evidence, chunk_ids = resolve_citations(
         db_session, ["patents_act_1970#s3(p)"], cv_id, cv_label, ["IN"], date.today()
@@ -52,13 +50,11 @@ def test_rule_engine_receipt_resolves_and_verifies(
 
     stored = latest_result_for_request(db_session, receipt.request_id)
     assert stored is not None
-    assert stored.result == result_payload
+    assert stored.result == {**result_payload, "receipt_id": receipt_id}
     assert stored.request_payload == {"probe": True}
 
 
-def test_random_receipt_ids_do_not_resolve(
-    db_session: Session, live_corpus_version: tuple[str, str]
-) -> None:
+def test_random_receipt_ids_do_not_resolve(db_session: Session, live_corpus_version: tuple[str, str]) -> None:
     assert get_receipt(db_session, "rcp_deadbeefcafe") is None
     assert verify_receipt(db_session, "rcp_deadbeefcafe") is None
 
@@ -69,3 +65,35 @@ def test_latest_result_for_request_rejects_malformed_ids(
     assert latest_result_for_request(db_session, "") is None
     assert latest_result_for_request(db_session, "not-a-uuid") is None
     assert latest_result_for_request(db_session, "00000000-0000-0000-0000-000000000000") is None
+
+
+def test_saved_result_tampering_is_detected(db_session, live_corpus_version) -> None:
+    import pytest
+    import sqlalchemy as sa
+
+    from app.core.errors import ApiError
+    from app.history.service import get_result, results
+
+    cv_id, cv_label = live_corpus_version
+    receipt_id = record_rule_engine_result(
+        db_session,
+        corpus_version_id=cv_id,
+        corpus_version_label=cv_label,
+        endpoint="tamper_probe",
+        jurisdiction="IN",
+        as_of=date.today(),
+        request_payload={},
+        evidence={},
+        chunk_id_by_evidence_id={},
+        result_payload={"type": "probe", "message": "Original", "receipt_id": ""},
+    )
+    request_id = get_receipt(db_session, receipt_id).request_id
+    assert get_result(db_session, request_id)["result"]["message"] == "Original"
+    db_session.execute(
+        sa.update(results)
+        .where(results.c.request_id == request_id)
+        .values(result={"type": "probe", "message": "Changed", "receipt_id": "rcp_invalid"})
+    )
+    db_session.commit()
+    with pytest.raises(ApiError, match="integrity"):
+        get_result(db_session, request_id)

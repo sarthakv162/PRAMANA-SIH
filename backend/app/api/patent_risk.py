@@ -19,14 +19,10 @@ router = APIRouter(tags=["patent-risk"])
 
 
 @router.post("/patent-risk", response_model=PatentRisk)
-async def patent_risk(
-    request: PatentRiskRequest, session: Session = Depends(get_session)
-) -> PatentRisk:
+async def patent_risk(request: PatentRiskRequest, session: Session = Depends(get_session)) -> PatentRisk:
     settings = get_settings()
     if settings.mock_mode:
-        fixture_name = (
-            "patent_risk_high.json" if request.classical_sources_cited else "patent_risk_low.json"
-        )
+        fixture_name = "patent_risk_high.json" if request.classical_sources_cited else "patent_risk_low.json"
         return PatentRisk.model_validate(load_fixture(fixture_name))
 
     version = live_corpus_version(session)

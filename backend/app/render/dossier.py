@@ -107,7 +107,15 @@ def _patent_risk_summary(payload: dict[str, Any]) -> list[str]:
 def _abs_summary(payload: dict[str, Any]) -> list[str]:
     lines = [payload.get("summary", "")]
     for item in payload.get("checklist", []):
-        status = "required" if item.get("required") else ("exempt" if item.get("exempt") else "n/a")
+        status = (
+            "unassessed"
+            if item.get("required") is None
+            else "required"
+            if item.get("required")
+            else "exempt"
+            if item.get("exempt")
+            else "n/a"
+        )
         lines.append(f"  [{status}] {item.get('title')} (authority: {item.get('authority')})")
         lines.append(f"    {item.get('detail')}")
     return lines

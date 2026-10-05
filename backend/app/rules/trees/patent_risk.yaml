@@ -15,7 +15,7 @@ rules:
       all:
         - { field: classical_sources_cited, op: nonempty }
     weight: 0.5
-    reason: "The formulation cites a classical source; s.3(p) excludes inventions that are, in effect, traditional knowledge or an aggregation/duplication of known properties of a traditionally known component."
+    reason: "A classical source was declared. Review the cited exclusion against the actual disclosure and claimed invention. This is an unreviewed rule indicator."
     cite: ["patents_act_1970#s3(p)"]
 
   - id: e_admixture_no_synergy
@@ -25,7 +25,7 @@ rules:
         - { field: ingredients, op: len_gte, value: 2 }
         - { field: claims_novel_effect, op: eq, value: false }
     weight: 0.4
-    reason: "Two or more ingredients are combined without a claimed novel/synergistic effect; s.3(e) excludes a substance obtained by mere admixture resulting only in aggregation of the components' known properties."
+    reason: "Multiple ingredients and no claimed novel effect were declared. This does not establish mere admixture; review the cited provision and evidence of the technical effect."
     cite: ["patents_act_1970#s3(e)"]
 
   - id: d_new_form_no_efficacy
@@ -33,19 +33,8 @@ rules:
     when:
       all:
         - { field: is_derivative_of_known_substance, op: eq, value: true }
-        - { field: has_clinical_data, op: eq, value: false }
     weight: 0.4
-    reason: "The formulation is a new form/derivative of a known substance without clinical data showing enhanced efficacy; s.3(d) excludes mere discovery of a new form of a known substance that doesn't enhance known efficacy."
-    cite: ["patents_act_1970#s3(d)"]
-
-  - id: d_derivative_with_efficacy_lower_risk
-    section: "3(d)"
-    when:
-      all:
-        - { field: is_derivative_of_known_substance, op: eq, value: true }
-        - { field: has_clinical_data, op: eq, value: true }
-    weight: 0.1
-    reason: "Clinical data is claimed for a derivative of a known substance — s.3(d) risk is lower but still turns on whether the data shows enhanced efficacy, which this tool doesn't independently verify."
+    reason: "A derivative of a known substance was declared. The existence of clinical data alone does not establish enhanced efficacy or determine applicability of the cited provision."
     cite: ["patents_act_1970#s3(d)"]
 
   - id: p_no_novel_effect_and_classical
@@ -55,5 +44,5 @@ rules:
         - { field: classical_sources_cited, op: nonempty }
         - { field: claims_novel_effect, op: eq, value: false }
     weight: 0.2
-    reason: "No novel effect is claimed over the cited classical source, reinforcing the s.3(p) concern."
+    reason: "No novel effect was declared alongside the classical source. Compare the claimed invention with that source and the cited provision."
     cite: ["patents_act_1970#s3(p)"]
