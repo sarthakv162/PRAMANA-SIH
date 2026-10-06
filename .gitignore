@@ -31,3 +31,7 @@ eval/results/*.json
 !eval/results/.gitkeep
 
 .DS_Store
+PRAMANA_ABSTRACT.md
+PRAMANA_ABSTRACT.txt
+PRAMANA_PROJECT_SUMMARY.md
+PRAMANA_PROJECT_SUMMARY.txt
