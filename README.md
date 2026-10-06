@@ -4,65 +4,61 @@
 
 ### **IP-SAKTI Sahayak**
 
-*Citation-Grounded, Multilingual Ayurveda IP and Regulatory Research with Local Inference*
+*Evidence-Grounded Intelligence for Ayurveda Intellectual Property and Regulatory Research*
 
 [![SIH 2026](https://img.shields.io/badge/SIH-2026-orange.svg)](PRAMANA_IMPLEMENTATION_PLAN.md)
 [![Problem Statement](https://img.shields.io/badge/PS-SIH26045-blue.svg)](PRAMANA_IMPLEMENTATION_PLAN.md)
 [![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)](backend/pyproject.toml)
 [![React 19](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)](frontend/package.json)
-[![PostgreSQL 16](https://img.shields.io/badge/PostgreSQL-16-336791?logo=postgresql&logoColor=white)](docker-compose.yml)
-[![Ollama](https://img.shields.io/badge/Ollama-Local_Inference-black)](backend/app/generation/llm.py)
+[![Qwen3](https://img.shields.io/badge/Qwen3-Structured_Inference-6D28D9)](backend/app/generation/claim_schema.py)
+[![ZeroGPU](https://img.shields.io/badge/Hugging_Face-ZeroGPU-FFD21E?logo=huggingface&logoColor=black)](deploy/huggingface/app.py)
 [![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](docker-compose.yml)
 
----
+**[Open the Prototype](https://huggingface.co/spaces/RJ8307/pramana-sih)** · **[Deployment Guide](docs/HUGGING_FACE_DEPLOYMENT.md)** · **[Testing Guide](docs/USER_TEST_GUIDE.md)**
 
-PRAMANA is a local web app for researching Ayurvedic intellectual property, product classification, biodiversity and regulatory requirements. It retrieves official legal sources from a versioned corpus, generates structured claims using native Ollama, and checks those claims against their supporting evidence before displaying them. Citations open the pinned source PDF; receipts record the answer's provenance.
+PRAMANA brings conversational research, formulation analysis, legal evidence, and research dossiers into one workspace. Ask a question in everyday language, inspect the provisions behind the answer, follow an explainable decision path, and collect useful findings into a source-linked case file.
 
-**Question in** (text, with optional Sarvam read-aloud for answers) →<br />
-**Evidence-grounded result out** (verified or partial claims, source extracts, or an explicit refusal).
+**Ask → Retrieve → Verify → Inspect → Save → Export**
 
-`🔗 Server-Resolved Citations` · `🏠 Local Ollama` · `💬 Shared Saved History` · `🧾 Verifiable Receipts`
+`🔎 Proof-Carrying Answers` · `📄 Highlighted Source PDFs` · `🌐 Multilingual Research` · `🧾 Verifiable Receipts`
 
 </div>
-
-> [!IMPORTANT]
-> A real supported question has produced verified synthesis end to end. The complete implementation plan is **not yet finished**: the staged Qwen corpus fails extraction-quality review and has not been approved or promoted. The current live corpus uses keyword retrieval. See the dated [verification report](docs/VERIFICATION_REPORT.md) and [canonical implementation plan](PRAMANA_IMPLEMENTATION_PLAN.md).
 
 ---
 
 <a id="features-offered"></a>
 ## ✨ Features Offered
 
-| # | Feature | Description |
-|---|---------|-------------|
-| 1 | **Citation-grounded answers** | Native `qwen3:4b` emits schema-constrained claims with evidence handles. The server resolves source text and verifies support. |
-| 2 | **Version, date and jurisdiction filtering** | Retrieval uses the pinned corpus version, selected India/international regime and indexed effective dates. Historical accuracy depends on source and amendment coverage. |
-| 3 | **Explicit abstention** | Out-of-domain, in-scope/no-evidence, low-confidence and generation-unavailable results remain distinct. |
-| 4 | **Section-aware retrieval** | Exact citations, full-text/trigram search, compatible dense vectors, rank fusion and legal-context expansion retrieve citable sections. |
-| 5 | **Product classification** | Up to four adaptive prompt groups gather facts for six provisional pathways, asking again when required facts are missing or ambiguous. |
-| 6 | **IP and ABS research tools** | Draft patent-rule indicators and a cited access-and-benefit-sharing checklist keep unassessed obligations visible. |
-| 7 | **Traditional-knowledge tools** | Botanical-name normalization, seed formulation overlap, seeded watchlist matches and a TKDL query pack. |
-| 8 | **Saved conversations and case files** | Authorized demo users share PostgreSQL history; results and case references survive reload and saved content expires after 30 days. |
-| 9 | **Source viewer and dossiers** | Production PDF.js worker, cited-page highlights, and Markdown/DOCX/PDF exports of actual saved results. |
-| 10 | **Receipts, coverage and evaluations** | Hash-chain/Merkle checks, official-source coverage status, measured evaluation reports and weekly staged source-change checks. |
-
-> **Current boundaries:** confidence is heuristic, TK matching uses seed data, TKDL is not connected, and speech recognition is unavailable. Read-aloud uses **Sarvam Bulbul v3** when the backend key is configured. Text generation, translation and embeddings remain local.
+| # | Feature | What the prototype delivers |
+|---|---------|----------------------------|
+| 1 | **Proof-Carrying Answers** | Qwen generates structured claims; the server resolves evidence IDs and checks support before displaying the result. |
+| 2 | **As-of Research & Jurisdiction Filtering** | Corpus versions, effective dates, named instruments, and India/international filters establish the research scope. |
+| 3 | **Claim Verification** | Natural language inference and checks for numbers, dates, references, negation, and modality assess each claim against its cited material. |
+| 4 | **Section-Aware Retrieval** | Citation parsing, ranked text search, model-compatible retrieval, and legal-context expansion connect questions with indexed provisions. |
+| 5 | **Adaptive Product Classification** | Up to four fact groups guide users through six provisional product research pathways. |
+| 6 | **Intellectual Property Research** | Source-linked patent rule indicators show the declared facts, triggered rules, and decision path. |
+| 7 | **Access & Benefit Sharing** | Activity-based checklists organize relevant statutory provisions for applicability review. |
+| 8 | **Traditional Knowledge Radar** | Botanical name normalization, classical seed-formulation matching, watchlist context, and a copyable TKDL query pack support preliminary research. |
+| 9 | **Conversations & Case Files** | Resume shared research, organize saved results, and generate PDF, DOCX, or Markdown dossiers. |
+| 10 | **Evidence & Audit** | Open cited PDF pages, inspect highlights, and verify receipt chains and corpus membership proofs. |
+| 11 | **Multilingual Text & Read-Aloud** | Eleven answer-language options, five interface translations, glossary-aware translation, and configurable Sarvam speech. |
+| 12 | **Mobile-Optimized PWA** | Responsive navigation, cached application assets, and a bundled PDF worker provide one interface across desktop and mobile. |
 
 ---
 
 <a id="who-its-for"></a>
 ## 👥 Who It's For
 
-| Persona | Typical Ask | Relevant Features |
-|---------|-------------|-------------------|
-| **Vaidya / practitioner** | Which indexed provisions discuss a traditional formulation? | Cited answers, product classification, Sarvam read-aloud |
-| **Ayush startup founder** | Which product pathway should I investigate? | Classification, IP indicators, ABS checklist, saved case files |
-| **Researcher** | What do the indexed sources say about traditional knowledge? | Section-aware retrieval, botanical normalization, TKDL query pack |
-| **Patent attorney** | Which clause supports this explanation? | Source PDF, evidence spans, date filters, receipt verification |
-| **Licensing authority / examiner** | Can the result be traced to its source version? | Coverage, pinned artifacts, receipt proofs, decision path |
-| **Student** | Explain an indexed legal provision in plain language | Text questions, language controls, cited explanations |
+| User | Research objective | Useful tools |
+|------|--------------------|--------------|
+| **Vaidya / practitioner** | Understand source-linked formulation and regulatory information | Ask Sahayak, Traditional Knowledge Radar, read-aloud |
+| **Ayush startup founder** | Investigate a product pathway and related research questions | Classify, Intellectual Property, ABS, Cases |
+| **Researcher** | Examine provisions and traditional-knowledge relationships | Evidence, citations, botanical normalization, receipts |
+| **Patent professional** | Review the material behind a patent-rule indicator | Intellectual Property, source viewer, decision paths |
+| **Institutional reviewer** | Trace findings to their source and processing context | Receipts, corpus versions, Evaluation, dossiers |
+| **Student** | Explore indexed legal material through clear explanations | Ask Sahayak, language controls, source excerpts |
 
-These tools support research and review. A provisional category, rule indicator or verified badge is not regulatory approval or a legal opinion.
+PRAMANA organizes evidence and research questions for informed discussion and professional review.
 
 ---
 
@@ -86,13 +82,13 @@ These tools support research and review. A provisional category, rule indicator 
 - [Security & Privacy](#security--privacy)
 - [Audit & Verify Receipt](#audit--verify-receipt)
 - [Evaluation Harness](#evaluation-harness)
-- [Feature Tiers & Status](#feature-tiers--status)
+- [Prototype Capabilities](#prototype-capabilities)
 - [API Surface](#api-surface)
 - [Quick Start](#quick-start)
 - [Repo Layout](#repo-layout)
 - [Tech Stack](#tech-stack)
 - [Demo Script](#demo-script)
-- [Risks & Things to Verify](#risks--things-to-verify)
+- [Research Workflow](#research-workflow)
 
 ---
 
@@ -101,98 +97,90 @@ These tools support research and review. A provisional category, rule indicator 
 
 <div align="center">
 
-<img width="1280" alt="PRAMANA production source drawer showing the pinned Patents Act PDF and a highlighted cited passage" src="docs/images/production-cited-pdf.png" />
+<img width="1280" alt="PRAMANA hosted prototype showing a cited Patents Act PDF with its supporting passage highlighted" src="eval/results/screenshots/space-hosted-cited-pdf.png" />
 
-*Actual production-browser capture from the 4 October 2026 verification run: a saved answer's citation opens its pinned PDF and highlighted passage.*
+*Recorded hosted-browser verification: an answer's citation opens the source PDF and highlighted passage.*
 
 </div>
 
-**Screens**
+| Tab | Purpose |
+|-----|---------|
+| **Ask Sahayak** | Ask questions, inspect claim support, continue conversations, and select findings for a case file. |
+| **Classify** | Gather product facts and explore a provisional regulatory pathway. |
+| **Intellectual Property** | Examine patent rule indicators and source-linked reasoning. |
+| **Access & Benefit Sharing** | Build a statutory research checklist from the selected activities. |
+| **Traditional Knowledge Radar** | Normalize ingredients, inspect classical seed matches, and prepare a TKDL query pack. |
+| **Cases** | Organize selected results and export a research dossier. |
+| **Evidence** | Browse indexed documents, official-source links, effective dates, and corpus versions. |
+| **Evaluation** | Inspect recorded routing, retrieval, and system-quality results. |
 
-| Screen | What's on it |
-|--------|--------------|
-| **Ask** | Text composer, jurisdiction/date/persona controls, language selection, pipeline stages and shared saved conversations |
-| **Answer / source drawer** | Claim statuses, source extracts, receipt link, Sarvam read-aloud and version-pinned PDF highlights |
-| **Classification** | Four adaptive fact-gathering groups, provisional/draft category and decision-path diagram |
-| **Intellectual Property** | Draft patent-rule indicators with resolved evidence |
-| **ABS** | Resource/activity inputs, cited provisions and applicability marked unassessed |
-| **Traditional Knowledge** | Ingredient normalization, seed matches, watchlist context and TKDL query pack |
-| **Cases** | Shared saved-result references, ordering and dossier exports |
-| **Evidence / source library** | Indexed documents, source provenance and coverage gaps |
-| **Receipt / evaluation** | Proof verification and the latest measured evaluation output |
-| **Escalations** | Administrator listing of local review tickets |
-
-Desktop navigation stays fixed while the main pane scrolls. Mobile navigation uses a dismissible drawer. The PWA caches application assets; new research still needs the local backend and models.
+A receipt view provides audit verification, while the shared source drawer keeps supporting text and PDF pages close to the finding being reviewed.
 
 ---
 
 <a id="design-law"></a>
 ## 📜 Design Law
 
+**Every substantive explanation should remain connected to inspectable evidence.**
+
 ```text
 PIN → SCRUB → FRAME → ROUTE → RETRIEVE → RESOLVE → GENERATE → VERIFY → RENDER → AUDIT
 ```
 
-- Source excerpts come from stored evidence, and model claims must identify their supporting evidence.
-- Structured JSON controls output shape; support checks determine whether a claim can be shown as verified or partial.
-- Unsupported subjects, missing corpus evidence and unavailable generation produce explicit outcomes.
-- Saved turns supply bounded follow-up context. They do not become legal evidence.
-- Corpus updates require staging, quality review, evaluation and named approval before promotion.
+The architecture gives each component a clear responsibility:
 
-### Hard Invariants
+- **The source collection owns the evidence:** excerpts come from stored, versioned text.
+- **The model drafts the explanation:** claims identify supporting evidence handles.
+- **The server computes claim status:** citation resolution, support checks, and deterministic guards control the result.
+- **The research scope controls retrieval:** date, jurisdiction, corpus version, and named instruments filter candidates.
+- **The audit layer records provenance:** receipts connect results to their evidence and processing context.
+- **The ingestion workflow governs updates:** reviewed candidates receive named approval before promotion.
 
-| ID | Invariant / enforced boundary |
-|----|------------------------------|
-| D-1 | The server materializes quoted evidence from stored source text, independently of model paraphrases. |
-| D-2 | Unknown evidence handles cannot support a generated claim. |
-| D-3 | Claims failing support or number/date/reference checks are dropped; uncertainty can downgrade a claim to partial. |
-| D-4 | Retrieval filters corpus version, jurisdiction, effective dates and explicitly named instruments before selecting candidates. |
-| D-5 | Routing uses deterministic rules and local embedding exemplars, without generative model routing. |
-| D-6 | Answer/translation and embedding models run through native local Ollama; no cloud LLM provider or fallback selector is configured. |
-| D-7 | Generation failure cannot appear as verified synthesis. Available evidence may be shown as an extractive result. |
-| D-8 | Audit persistence is required for a successful auditable query result. |
-| D-9 | Incompatible embedding spaces are never compared; the legacy live index uses keyword retrieval. |
-
-A claim passing these checks is supported by the selected indexed text. It is not a guarantee that extraction, legal interpretation or amendment coverage is complete.
+These boundaries make the relationship between a generated explanation and its supporting material visible throughout the application.
 
 ---
 
 <a id="system-architecture"></a>
 ## 🏗️ System Architecture
 
+PRAMANA has two execution profiles that share the research interface, claim schema, citation checks, decision tools, and audit workflow.
+
+| Profile | Inference | Storage | Request transport |
+|---------|-----------|---------|-------------------|
+| **Hosted judging prototype** | Qwen models in PyTorch on Hugging Face ZeroGPU | Session SQLite with FTS5/BM25 and a checksum-verified corpus seed | Gradio queue for generation; FastAPI research routes |
+| **Local Mac workspace** | Native Ollama with Qwen models; local NLI verification | PostgreSQL 16, pgvector, text search, history, and receipts | REST and server-sent events through the Nginx proxy |
+
 ```mermaid
-graph TB
-    CLIENT["React 19 PWA<br/>Ask · History · Tools · PDF Viewer"]
-    CLIENT -->|"REST and SSE"| WEB["Nginx<br/>Production assets and /v1 proxy"]
-    WEB --> API["FastAPI<br/>Typed async pipeline · Access checks · Audit"]
-    API -->|"SQL"| PG[("PostgreSQL 16<br/>pgvector · Full text · History · Receipts")]
-    API -->|"Host connection"| OLLAMA["Native Mac Ollama<br/>qwen3:4b · qwen3-embedding:0.6b"]
-    API --> NLI["Local CPU mDeBERTa<br/>Claim verification"]
-    API -->|"Explicit read-aloud only"| SARVAM["Sarvam Bulbul v3<br/>Remote TTS · Server-side key"]
-    API --> PDF["Versioned source PDFs<br/>Hashes · Pages · Highlight coordinates"]
-    MONITOR["Weekly source monitor"] --> CANDIDATE["Separate candidate downloads"]
-    CANDIDATE --> INGEST["Stage · Quality review · Golden evaluation"]
-    INGEST -->|"Named approval then promotion"| PG
-    INGEST --> PDF
+flowchart TB
+    CLIENT["React 19 PWA<br/>Research tools · Conversations · PDF viewer"]
+    CLIENT --> TRANSPORT["Local REST/SSE or Hosted Gradio Queue"]
+    TRANSPORT --> API["FastAPI<br/>Typed research pipeline"]
+    API --> EVIDENCE["Versioned Evidence<br/>Date · Jurisdiction · Section filters"]
+    EVIDENCE --> PACK["Server-Owned Evidence Pack<br/>Text · IDs · Pages · Hashes"]
+    PACK --> QWEN["Qwen3 4B<br/>Schema-constrained claims"]
+    QWEN --> VERIFY["mDeBERTa NLI + Deterministic Guards"]
+    VERIFY --> RESULT["Result · Citations · Research Context"]
+    RESULT --> STORE["Saved Results · Cases · Dossiers"]
+    RESULT --> AUDIT["Hash Chain · Receipts · Merkle Proofs"]
+    API --> RULES["Classification · Patent Indicators · ABS · TK"]
+    API --> SPEECH["Configured Sarvam Read-Aloud"]
+    MONITOR["Weekly Source Check"] --> STAGE["Stage · Quality Review · Evaluation"]
+    STAGE --> APPROVAL["Named Reviewer Approval"]
+    APPROVAL --> EVIDENCE
 ```
 
 ### Layer Decisions
 
-| Layer | Decision | Reason |
-|-------|----------|--------|
-| **Frontend** | React 19, TypeScript, Vite, Nginx and PWA assets | One browser interface for questions, tools, saved work and source inspection |
-| **Orchestration** | Plain typed async generator | The current pipeline has no graph loops; stages and errors can be tested directly |
-| **API** | FastAPI with REST and SSE | Validated contracts and visible stage progress |
-| **Data plane** | PostgreSQL 16 with pgvector and lexical search | Corpus, provenance, history and audit records share transactional storage |
-| **Embeddings** | Native `qwen3-embedding:0.6b`, 1,024 dimensions | Smaller multilingual model for the 16 GB target |
-| **Reranker** | Disabled | Keeps the model stack and peak memory budget lean |
-| **Verification** | Local CPU mDeBERTa NLI plus deterministic guards | Checks claim support and catches unsupported numbers and references |
-| **Generator / translation** | Native `qwen3:4b`, temperature 0, thinking off, context at most 8,192 | Local text processing with schema-constrained claim output |
-| **Deployment** | Mac Compose, or a single hosted web image plus PostgreSQL | Hosted inference runs inside the server; public demo mode needs no login |
-| **Concurrency** | Serialized query/inference work | Limits concurrent model allocations on a 16 GB machine |
-
-> [!NOTE]
-> This project's default deployment is **local on macOS**, targeting a **12 GB total app/model peak budget**. Container limits alone do not establish total memory usage.
+| Layer | Choice | Purpose |
+|-------|--------|---------|
+| **Interface** | React, TypeScript, Vite, PWA assets | A single responsive research workspace |
+| **Orchestration** | Typed asynchronous generator | Explicit stages, shared request state, and timing information |
+| **API contracts** | FastAPI, Pydantic, generated OpenAPI and TypeScript | Consistent request and response shapes |
+| **Generation** | Qwen3 4B, temperature zero / greedy decoding, thinking disabled, context capped at 8K | Controlled structured explanations |
+| **Embedding operations** | Qwen3 Embedding 0.6B, 1,024 dimensions | Multilingual embedding and model-aware retrieval operations |
+| **Verification** | mDeBERTa NLI and deterministic guards | Claim-level support assessment |
+| **Source inspection** | Versioned PDFs and bundled PDF.js worker | Cited-page rendering and highlights |
+| **Audit** | Hash chain and corpus Merkle proofs | Inspectable record integrity and evidence membership |
 
 ---
 
@@ -202,330 +190,279 @@ graph TB
 ```mermaid
 sequenceDiagram
     participant User
-    participant PWA as React PWA
+    participant UI as Research Workspace
     participant API as FastAPI Pipeline
-    participant DB as PostgreSQL
-    participant Local as Native Ollama
-    participant Verifier as Local Verifier
-
-    User->>PWA: Question and optional conversation
-    PWA->>API: POST /v1/query
-    API->>API: Admit, validate access, pin corpus, scrub and frame
-    API->>DB: Load bounded recent turns when authorized
-    opt Non-English input
-        API->>Local: Translate to English pivot
-    end
-    API->>API: Route scope and constrain named instruments
-    API->>DB: Filter and retrieve supporting evidence
-    API->>API: Resolve exact stored spans
-    alt Evidence supports generation
-        API->>Local: Schema-constrained claims
-        Local-->>API: Claims and evidence handles
-        API->>Verifier: NLI and deterministic support checks
-        opt Non-English output
-            API->>Local: Translate and back-translate claim text
-        end
-    else Missing evidence or generation unavailable
-        API->>API: Build explicit refusal or extractive result
-    end
-    API->>DB: Append audit and save scrubbed result
-    API-->>PWA: Stage events then final card and receipt
-    PWA-->>User: Result with sources and statuses
+    participant DB as Evidence and History Store
+    participant Model as Qwen
+    participant Check as Server Verifier
+    User->>UI: Question and research controls
+    UI->>API: Query through selected transport
+    API->>DB: Pin corpus and load recent conversation context
+    API->>API: Scrub, frame, and route
+    API->>DB: Filter and retrieve relevant passages
+    DB-->>API: Source text and metadata
+    API->>Model: Evidence pack and claim schema
+    Model-->>API: Claims and evidence handles
+    API->>Check: Resolve citations and assess support
+    Check-->>API: Claim statuses and verification signals
+    API->>DB: Record result, history, and receipt
+    API-->>UI: Research card with citations
+    UI-->>User: Inspect, save, and export
 ```
 
-**Lifecycle steps:** Intake → Frame → Cache (currently skipped) → Route → Retrieve → Resolve → Generate → Verify → Render → Audit. Early exits mark remaining stages skipped. Stage progress is streamed; unverified draft model tokens are not streamed as an answer.
-
-### Routing Tiers
-
-| Path | Current behavior |
-|------|------------------|
-| **Scope decision** | Distinguishes unsupported topics from in-scope research |
-| **Exact citation** | Resolves named document/section candidates through the filtered corpus |
-| **Evidence retrieval** | Keyword search, plus dense search only for compatible reviewed indexes |
-| **Synthesis** | Claims shown with verification status only after schema and support checks |
-| **Failure / abstention** | Distinct reasons and available source excerpts; no invented supported answer |
-| **Cache** | Helper exists, but the query pipeline currently reports this stage as skipped |
-
-Recent saved turns help follow-ups identify the subject. Each new answer still retrieves and cites its own pinned evidence.
+Stage events show progress while the request is processed. Recent saved turns help interpret follow-up questions, and each answer retrieves its own source material. Verification completes before the final research card is displayed.
 
 ---
 
 <a id="retrieval-design"></a>
 ## 🔎 Retrieval Design
 
-- **Filter before ranking:** selected corpus, jurisdiction, effective date and explicitly named instruments constrain eligible rows.
-- **Lexical retrieval:** PostgreSQL full-text ranking and citation parsing preserve direct legal references; trigram matching supplements lexical results.
-- **Compatible dense retrieval:** Qwen query vectors are compared only with a corpus version tagged with the same embedding model.
-- **Rank fusion and context:** compatible channels can be fused, and section parents/provisos are expanded to retain legal conditions.
-- **Bounded evidence pack:** generation receives whole evidence blocks within its prompt budget, with server-owned IDs and source metadata.
-- **Reranking:** disabled in the current local configuration.
+**Filter first, retrieve by relevance, preserve legal context.**
 
-As of the 4 October 2026 verification, live version `2026-10-03-fed342` contains legacy vectors and uses **keyword-only retrieval**. Staged version `local-qwen-2026-10-04` contains genuine Qwen vectors but remains unapproved. Re-ingestion, passing review and promotion are required before dense Qwen retrieval becomes the live path.
+1. **Scope the evidence:** apply corpus version, jurisdiction, effective-date, and named-instrument constraints.
+2. **Recognize citations:** use document and section references to locate eligible provisions.
+3. **Rank stored text:** PostgreSQL text search and trigram support serve the local profile; SQLite FTS5/BM25 serves the hosted prototype.
+4. **Respect model identity:** dense retrieval uses corpus vectors compatible with the configured embedding model.
+5. **Combine compatible rankings:** reciprocal rank fusion organizes results within jurisdiction buckets.
+6. **Expand legal context:** section parents and relevant relationships preserve surrounding conditions.
+7. **Build a bounded pack:** complete source blocks fit within the generation budget.
+
+The deployed source snapshot uses ranked keyword retrieval. Corpus metadata controls embedding compatibility, keeping retrieval tied to the correct source and model identities.
 
 ---
 
 <a id="proof-carrying-generation--claim-firewall"></a>
 ## ✅ Proof-Carrying Generation & Claim Firewall
 
-1. Retrieval builds numbered evidence blocks with source text, IDs, section keys, jurisdiction, page, offsets and hashes.
-2. Ollama receives the existing claim schema through its JSON Schema `format` interface.
-3. Output is validated with Pydantic. Invalid schema output is retried once using the same model, then rejected.
-4. The server resolves evidence handles; unknown references cannot support claims.
-5. Local NLI checks cited evidence against each claim, with guards for numbers, dates, section references, jurisdiction, negation and modality.
-6. Supported claims are labelled **verified** or **partial**. Failed claims are dropped. Source excerpts remain the original stored text.
-7. The final card records sources, verification signals, gaps, model/corpus information and a receipt.
+PRAMANA separates **what the model writes** from **what the source says** and **what the server verifies**.
 
-Default NLI thresholds are `0.80` for verified eligibility and `0.50` for partial eligibility; lower support is dropped. Other guards can drop or downgrade a claim regardless of its NLI score.
+| Step | Responsibility |
+|------|----------------|
+| **Evidence pack** | Store-owned text with numbered handles, source metadata, page locations, and hashes |
+| **Structured generation** | Claims and supporting evidence handles in the project's JSON Schema |
+| **Contract validation** | Pydantic validates the model output |
+| **Citation resolution** | The server maps handles to known evidence IDs |
+| **Support assessment** | NLI compares each claim with its cited passages |
+| **Deterministic checks** | Numbers, dates, section references, negation, and modality are assessed |
+| **Research card** | Supported claims, original excerpts, citation controls, and a receipt |
 
-> [!NOTE]
-> JSON validity does not prove factual support. NLI is imperfect, and proof verification establishes provenance rather than legal correctness.
+Ollama supplies JSON Schema output in the local profile. The hosted adapter uses schema-constrained tokens and final Pydantic validation. Claim statuses are computed by the server from the cited material.
 
 ---
 
 <a id="risk-controlled-abstention"></a>
 ## 🎚️ Risk-Controlled Abstention
 
-| Item | Current implementation |
-|------|------------------------|
-| **Signals** | Retrieval margin, mean NLI entailment, surviving verified-claim ratio and back-translation health |
-| **Weights** | Default equal weights of `0.25`; a heuristic rather than a calibrated probability |
-| **Thresholds** | Below `0.35`: abstain. Below `0.60`: recommend review. |
-| **Refusal reasons** | Includes out-of-scope, no-evidence, low-confidence and generation-unavailable outcomes |
-| **Unavailable generation** | Can show real source extracts with an explicit unavailable message; never verified synthesis |
-| **Escalation** | Creates a local review ticket attached to a real request; no email delivery or professional response is connected |
+**Evidence-aware responses** keep the research interaction grounded in its selected sources.
 
-No conformal error guarantee is established. Confidence calibration, risk–coverage evaluation and broader answer-quality testing remain work to do.
+The pipeline combines retrieval margin, mean entailment, verified-claim ratio, and translation checks into confidence signals. Response handling distinguishes research scope, evidence availability, model availability, and support level. Retrieved excerpts can be presented directly when appropriate, preserving access to the original material.
+
+Review recommendations, clarification prompts, and request-linked review tickets help users decide what to inspect next. Confidence labels accompany the evidence and processing context of the result.
 
 ---
 
 <a id="deterministic-decision-engines"></a>
 ## 🧮 Deterministic Decision Engines
 
-**Product classification** gathers up to four distinct adaptive groups:
+### Adaptive Product Classification
 
-1. Intended use, therapeutic claims and label claims.
-2. Administration route, dosage/form and intended population.
-3. Classical book/passage match and deviations.
-4. Ingredients, preparation/extract, ingredient basis, novelty and marker details.
+The wizard gathers up to four distinct groups of facts:
 
-| Outcome | Meaning in the app |
-|---------|--------------------|
-| **Classical / generic** | Declared classical match and compatible medicinal facts |
-| **Patent or proprietary** | Medicinal pathway involving declared deviations within the rule model |
-| **New / investigational drug** | A research workflow for novelty, non-classical ingredients or relevant route/extract facts |
-| **Phytopharmaceutical** | Relevant purified-fraction and marker facts within the rule model |
-| **Aahara / nutraceutical** | Combined food research workflow |
-| **Cosmetic** | External cosmetic-use workflow |
+1. **Intended use and claims** — therapeutic purpose and proposed label claims.
+2. **Administration and form** — route, dosage, product form, and intended population.
+3. **Classical source relationship** — identified source passages and declared deviations.
+4. **Ingredients and preparation** — ingredient basis, extraction, novelty, and marker details.
 
-Missing, unknown or conflicting facts keep the relevant prompt open. Clinical-data availability alone does not choose a category. Defining clauses must resolve in the pinned corpus; absent support is labelled **draft**. These groupings are provisional workflows, not independent statutory determinations.
+| Provisional pathway | Research focus |
+|---------------------|----------------|
+| **Classical / generic** | Declared classical match and medicinal facts |
+| **Patent or proprietary** | Formulation deviations and medicinal research pathway |
+| **New / investigational** | Novelty, ingredient, route, or extract research |
+| **Phytopharmaceutical** | Purified-fraction and marker-related facts |
+| **Aahara / nutraceutical** | Food-related research pathway |
+| **Cosmetic** | External cosmetic-use research pathway |
 
-**Patent indicators:** declared facts activate cited rule indicators. Scores are draft and unreviewed, not probabilities of grant or rejection. Declaring clinical data alone does not remove the derivative indicator.
+Adaptive prompts collect clarification where needed, and source-linked outcomes expose the facts and decision path used.
 
-**ABS checklist:** displays resolved statutory provisions while keeping applicability **unassessed**. Missing facts do not imply an exemption, obligation, authority approval or hardcoded processing time.
+### Intellectual Property Indicators
 
-> [!IMPORTANT]
-> Outputs are informational. Product, IP and ABS conclusions require qualified review of actual facts and operative legal text.
+The patent research tool applies a versioned rule set to declared formulation facts. Indicators associated with **3(p), 3(e), and 3(d)** display triggered rules, reasons, and supporting provisions. The gauge summarizes rule weights, while the decision path makes the underlying research questions inspectable.
+
+### Access and Benefit Sharing
+
+Selected activities guide a **source-backed statutory checklist**. Research, commercial utilization, intellectual property, transfers, export, and cultivation or trade lead to relevant provision groups for applicability review.
 
 ---
 
 <a id="traditional-knowledge-botanicals--prior-art"></a>
 ## 🌿 Traditional Knowledge, Botanicals & Prior Art
 
-- **Botanical normalization:** local name records map known common/regional/scientific names and expose unresolved ambiguity.
-- **Classical seed matching:** ingredient-set overlap against the **10-entry seed formulation CSV**, with an indication-match boost. This is not a complete classical-text search or efficacy assessment.
-- **Watchlist:** ingredient matches against seeded case summaries. It is not a live patent-monitoring service.
-- **TKDL query pack:** builds structured search material for later authorized use; the app does not search the restricted TKDL database.
-- **Source-backed research:** legal statements still require supporting indexed evidence, independent of a seed match.
+The Traditional Knowledge Radar connects ingredient identity with preliminary formulation research.
 
-A comprehensive prior-art search, formulation-ratio/embedding similarity system and live biopiracy monitor are not delivered by the seed tools.
+- **Botanical ontology:** recognized common, Sanskrit, regional, and Latin names map to structured plant records.
+- **Classical seed matching:** ingredient-set overlap against a curated ten-formulation dataset, with an indication-match signal.
+- **Explainable comparisons:** shared, missing, and additional ingredients appear beside the match.
+- **Radar visualization:** matching signals are presented in an interactive chart.
+- **Watchlist context:** seeded case summaries provide research leads and source links.
+- **TKDL query builder:** copyable search terms and candidate classification material support later authorized searching.
+
+Formulation tools connect this ingredient research with classification, patent indicators, and saved findings in the wider workspace.
 
 ---
 
 <a id="multilingual--voice"></a>
 ## 🌐 Multilingual & Voice
 
+**Typed research in eleven languages, with configurable Sarvam read-aloud.**
+
+| Layer | Implementation |
+|-------|----------------|
+| **Answer languages** | English, Hindi, Tamil, Bengali, Marathi, Telugu, Gujarati, Kannada, Malayalam, Punjabi, and Odia |
+| **Interface languages** | English, Hindi, Tamil, Bengali, and Marathi |
+| **Research pivot** | Qwen translation into English for retrieval and claim verification |
+| **Terminology** | Glossary masking and restoration for selected terms |
+| **Evidence text** | Original excerpts retain their stored wording |
+| **Output check** | Back translation with a token-overlap fidelity check |
+| **Read-aloud** | Sarvam Bulbul v3 through the backend's configured API key |
+| **Playback** | Sequential chunks, stop/cancel controls, and validated WAV audio |
+
 ```text
-Text → language detection → local English pivot → retrieve → verify English claims
-                                                            ↓
-                    local output translation → back-translation check → answer
-                                                            ↓
-                                explicit read-aloud → Sarvam Bulbul v3 audio
+Typed question → language detection → English research pivot
+    → retrieve evidence → generate and verify claims
+    → requested-language explanation → explicit Sarvam read-aloud
 ```
 
-| Capability | Actual connection |
-|------------|-------------------|
-| **Translation** | Native `qwen3:4b`; no remote translation provider or provider key |
-| **Term locking** | A glossary protects selected statutory terms during translation |
-| **Evidence language** | Quoted source text stays verbatim in its stored language |
-| **Back-translation** | Current round-trip token-overlap check; failed translation fidelity downgrades claim status |
-| **Read-aloud TTS** | Sarvam Bulbul v3 through the backend; long answers are chunked and played sequentially with stop/cancel support |
-| **Backend TTS** | `/v1/speech/tts` returns validated `audio/wav`; missing keys return `sarvam_not_configured`, with explicit provider failure messages |
-| **Speech recognition** | `/v1/speech/asr` returns HTTP 503 `local_asr_unavailable`; typed input remains available |
-| **Sarvam credentials** | `SARVAM_API_KEY` stays in the server environment. Default model `bulbul:v3`, voice `shubh`; no key is sent to the frontend |
-
-Language options do not establish equal legal accuracy across languages. Read-aloud sends the displayed answer text to Sarvam only after the user presses Listen; the UI identifies the provider. Requests use the [official Sarvam REST contract](https://docs.sarvam.ai/api-reference/text-to-speech/convert), at most 2,500 Unicode characters per chunk, and WAV output. Failed requests do not silently fall back to a browser voice.
+Read-aloud requests are initiated through the Listen control. The backend holds the credential and returns audio to the interface. Long answers are divided into requests of at most 2,500 characters, preserving sequential playback.
 
 ---
 
 <a id="corpus--ingestion"></a>
 ## 📚 Corpus & Ingestion
 
-### Corpus
+### Versioned Source Collection
 
-[`corpus/manifest.yaml`](corpus/manifest.yaml) pins source metadata and hashes. [`corpus/coverage.yaml`](corpus/coverage.yaml) maps **22 topics** to official sources or explicit gaps. `/v1/corpus/coverage` derives availability from the real live corpus.
+The hosted export includes **28 documents**, **3,664 sections/chunks**, and **223 legal relationships** from the live source snapshot. The [source manifest](corpus/manifest.yaml) pins provenance and hashes; the [coverage matrix](corpus/coverage.yaml) organizes 22 research topics.
 
-| Area | Scope tracked |
-|------|---------------|
-| **Indian IP** | Patents, trade marks, geographical indications, designs, copyright and plant-variety protection |
-| **Ayurveda regulation** | Drugs/cosmetics, clinical trials, Ayurveda Aahara, therapeutic advertising and labels |
-| **Biodiversity / ABS** | Biological Diversity Act, rules and ABS regulations |
-| **International** | TRIPS, CBD, Nagoya and WIPO genetic-resources/associated-TK treaty sources |
-| **Explicit gaps** | PCT, Madrid, Hague, Budapest, reviewed trade-secret case coverage and authorized TKDL search |
+| Research area | Source organization |
+|---------------|---------------------|
+| **Indian intellectual property** | Patent, trade mark, geographical indication, design, copyright, and plant-variety topics |
+| **Ayurveda regulation** | Drugs/cosmetics, clinical research, Ayurveda Aahara, advertising, and label topics |
+| **Biodiversity and ABS** | Biological diversity legislation, rules, and regulatory material |
+| **International research** | Treaty and international-framework topics |
 
-A document marked indexed establishes availability, not complete extraction or legal currentness. Source library status should be checked before making a coverage claim.
+The Evidence tab connects indexed documents with official-source links, effective dates, and collection versions.
 
-**Current corpus status recorded on 4 October 2026:**
-
-- Live: `2026-10-03-fed342`, legacy vectors, keyword retrieval.
-- Staged: `local-qwen-2026-10-04`, **28 sources**, genuine Qwen vectors, **46 quality findings** and no approval/promotion.
-- Findings include **12 sources below 70% text coverage** and **191 chunks missing highlight coordinates**.
-- Parser repairs improved offline TRIPS/CBD extraction, but those repairs have **not been re-ingested** into the indexes.
-
-### Ingestion Pipeline
+### Reviewed Ingestion Workflow
 
 ```mermaid
-graph LR
-    A["Check official source hashes"] --> B["Save separate complete candidate"]
-    B --> C["Extract text and source offsets"]
-    C --> D["Structure sections and legal context"]
-    D --> E["Embed with Qwen"]
-    E --> F["Stage versioned corpus and PDFs"]
-    F --> G["Provenance and extraction checks"]
-    G --> H["Golden retrieval evaluation"]
-    H --> I["Named reviewer approves exact report"]
-    I --> J["Promote reviewed version"]
+flowchart LR
+    A[Official Source Check] --> B[Candidate Snapshot]
+    B --> C[Extract and Structure]
+    C --> D[Stage Corpus and PDFs]
+    D --> E[Provenance and Quality Review]
+    E --> F[Golden Set Evaluation]
+    F --> G[Named Approval]
+    G --> H[Promote Reviewed Version]
 ```
 
-The source-monitor service checks weekly. It never overwrites live evidence or automatically promotes a changed source. Network failures mean currentness remains unconfirmed; they are not proof that a source is unchanged.
+The weekly source checker prepares separate candidates. Promotion binds reviewer approval to the exact quality report and reviewed source contents.
 
 ```sh
 make check-sources
 make stage-source-update MANIFEST=/workspace/corpus/raw/source-updates/<timestamp>/manifest.yaml
-
 make ingest
 make review-stage V=<staged-version>
-# Only after a passing review and actual named reviewer approval:
-make approve-stage V=<staged-version> \
-  REVIEWER='<actual reviewer name>' REPORT_HASH=<passing-reviewed-report-hash>
+make approve-stage V=<staged-version> REVIEWER='<reviewer-name>' REPORT_HASH=<reviewed-report-hash>
 make promote V=<staged-version>
 ```
 
-Replace angle-bracket placeholders with actual artifacts. Resume interrupted ingestion with `make resume-ingest V=<staged-version>`; optional `SOURCE` restricts source IDs. Resume does not replace already committed chunks after parser changes: rebuild a fresh stage or use a reviewed repair process.
+Use the generated candidate path, staged version, and actual reviewer-approved report in these commands. The [canonical plan](PRAMANA_IMPLEMENTATION_PLAN.md) defines the review and promotion requirements.
 
 ---
 
 <a id="data-model"></a>
 ## 🗄️ Data Model
 
-One **PostgreSQL 16** database holds corpus, research and shared history. Alembic migrations define the actual schema in [`backend/alembic/versions`](backend/alembic/versions).
+The same research concepts are represented in local PostgreSQL and the hosted session SQLite profile.
 
-```text
-corpus_versions       Label, staged/live/retired status, Merkle root, embedding model
-documents             Source key, title, jurisdiction, provenance and source hash
-document_versions     Version-pinned PDF path, hash and source metadata
-sections              Hierarchy, section key, version and effective dates
-chunks                Exact text, offsets, page, boxes, vector(1024), full-text index
-edges                 Versioned legal relationships between sections
-source_reviews        Quality report, report hash and exact named approval
-requests              Query hash, pinned version, language, jurisdiction and date
-audit_log             Append-only chain links and provenance payloads
-conversations         Workspace, title, activity and inactivity expiry
-conversation_messages Scrubbed turns and independent content expiry
-saved_results         Actual result JSON, receipt reference and independent expiry
-case_file_refs        Shared workspace references to saved results and ordering
-escalations           Local request-linked review tickets and contact details
-eval_runs             Evaluation configuration and measured outputs
-```
+| Records | Purpose |
+|---------|---------|
+| **Corpus and document versions** | Source identity, provenance, artifact hashes, and effective dates |
+| **Sections, chunks, and edges** | Structured legal text, locators, retrieval metadata, and relationships |
+| **Source reviews** | Quality reports and exact reviewer approval |
+| **Requests and saved results** | Research context, result payloads, and receipt references |
+| **Conversations and messages** | Scrubbed research turns and bounded follow-up context |
+| **Case references** | Selected results and dossier ordering |
+| **Audit entries and receipts** | Chain links, evidence proofs, and processing provenance |
+| **Evaluation runs** | Recorded conditions and measured outputs |
 
-Botanical/classical/watchlist seed tools currently read their packaged CSV/YAML data. Database tables also exist for these domains; table existence alone does not mean a live research feed is connected.
-
-Messages and saved-result payloads expire independently after **30 days**. Conversations expire after **30 days of inactivity**. Case references depend on surviving saved results. Receipts and new hash/provenance audit entries are separate from expiring answer content.
+The local workspace applies thirty-day saved-content expiry. The hosted profile uses a session workspace initialized from the corpus seed. Dossier downloads let users retain selected research on their own device.
 
 ---
 
 <a id="security--privacy"></a>
 ## 🔒 Security & Privacy
 
-- **Local text inference:** answer generation, translation and embeddings use loopback/host Ollama. Cloud LLM keys and fallback selectors are absent. Sarvam is the user-requested speech exception, with a backend-only key and explicit read-aloud disclosure.
-- **Local ports:** Compose binds the database, backend and frontend to `127.0.0.1` on the host.
-- **Shared-workspace access:** the local default uses `X-Demo-Key`. The hosted judging demo enables `PUBLIC_DEMO_MODE=1`, opening shared history, results, case references and exports to everyone visiting the link.
-- **Scrubbing:** email, phone, Aadhaar, PAN and GSTIN patterns are scrubbed before saving. Arbitrary personal names and prose are not guaranteed anonymized.
-- **Persistence:** credentials use browser session storage. History and saved case results live in PostgreSQL; UI preferences can use local storage.
-- **Rate limiting:** default 120 requests per 60 seconds by request client identity; this is not a full individual-user quota system.
-- **Source protection:** live source mutation is guarded, and promotion verifies reviewed provenance/content rather than trusting model output.
+**Evidence provenance and deliberate data handling are built into the workflow.**
 
-| Role / connection | Purpose |
-|-------------------|---------|
-| `pramana_app` / `app_ro` | Runtime corpus reads, controlled audit/request operations and authorized history writes |
-| `ingest_rw` | Staged corpus writes and review/promotion operations |
-| PostgreSQL owner | Role provisioning and migrations; not the normal query connection |
-| Named reviewer record | Approval bound to the exact passing report hash |
+- **Identifier scrubbing:** recognizable email, phone, Aadhaar, PAN, and GSTIN patterns are scrubbed before content is saved.
+- **Backend credentials:** database and speech secrets remain in server configuration.
+- **Workspace access:** local history uses the configured demo key; the public judging interface opens the shared research workspace.
+- **Scoped database roles:** runtime, ingestion, and owner connections separate their responsibilities in the local profile.
+- **Versioned artifacts:** source metadata and hashes identify the PDF associated with an evidence span.
+- **Controlled promotion:** source updates pass through reviewed staging and named approval.
+- **Separate audit data:** provenance records are maintained separately from expiring saved-result content.
 
-> [!NOTE]
-> The hosted demo is intentionally public. Everyone shares the same history and can delete shared conversations or change the case file. Scrubbing and 30-day expiry still apply. The escalation contact listing retains its existing separate admin key; normal judging workflows require no key.
-
-Initial dependency/model downloads and official-source checks need network access. The runtime performs local text inference after the required assets are installed.
+Shared conversations and case files support collaboration within the demo workspace. The [implementation plan](PRAMANA_IMPLEMENTATION_PLAN.md) documents the storage and access model.
 
 ---
 
 <a id="audit--verify-receipt"></a>
 ## 🧾 Audit & Verify Receipt
 
-A query result records its request, pinned corpus, evidence hashes, outcome and audit-chain link. Evidence membership can be checked against the corpus Merkle root.
+**A research result can be traced back to its recorded evidence.**
 
-**Verify Receipt** recomputes chain/proof checks through `/v1/receipts/{receipt_id}/verify`. The production acceptance script exercises actual receipt proofs alongside a real generated answer.
+Receipts identify the request, corpus version, creation time, query hash, prompt version, model information, and audit-chain link. The **Verify Receipt** action recomputes integrity checks through the backend.
 
-> [!NOTE]
-> The proof establishes a record's integrity and evidence membership. It does not establish that every source was extracted completely or that a claim is legally correct. Quality review and human review cover those different questions.
+| Mechanism | What it checks |
+|-----------|----------------|
+| **Hash-chained ledger** | Consistency of the recorded audit sequence and payload hashes |
+| **Merkle proof** | Membership of a cited chunk in the recorded corpus root |
+| **Version-pinned artifact** | Identity of the PDF associated with the selected source version |
 
-New audit entries keep hashes/provenance separately from saved message/result payloads so content expiry need not rewrite the append-only chain. Pre-migration historical audit rows are not silently rewritten.
+The hosted verification exercised an actual generated answer, its receipt chain, and both cited-evidence membership proofs.
 
 ---
 
 <a id="evaluation-harness"></a>
 ## 📏 Evaluation Harness
 
-The current routing golden set contains **55 cases**. The retrieval golden set contains **10 cases: eight evidence-bearing questions and two abstention questions**. These are separate measurements.
+**Recorded verification on 5 October 2026** connects software checks with a real hosted research workflow.
 
-| Check | Recorded result on 4 October 2026 |
-|-------|----------------------------------|
-| Backend suite | **242 passed** in the isolated maintenance container |
-| Frontend unit suite | **17 passed** |
-| Backend lint / types | Ruff and mypy passed |
-| Frontend lint / production build | Passed; bundled PDF worker included |
-| Fixture browser suite | **16 passed**, 5 live-only cases intentionally skipped |
-| Live production browser suite | **5 passed** against actual services and saved answers |
-| Real synthesis | Verified claim(s), supporting citations and receipt proofs passed |
-| Generation-unavailable path | Actual source extracts and receipt; no verified synthesis |
-| Routing scope recognition | **100% on the 55 tested cases** |
-| Live retrieval | **5/8 evidence cases**, reported recall `0.62`, precision `0.08`, zero jurisdiction leaks |
-| Staged Qwen retrieval | Recall `1.00`, precision `0.10`, zero jurisdiction leaks on the same small set |
-| Synthesized-answer faithfulness | **Not measured**; remains null |
-| Sampled app/model memory | **8.52 GB** peak against the **12.00 GB** budget, with both selected models loaded |
+| Check | Recorded result |
+|-------|-----------------|
+| **Backend unit and contract tests** | 282 passed |
+| **PostgreSQL invariant tests** | 16 passed |
+| **Frontend unit tests** | 41 passed |
+| **Backend checks** | Ruff and mypy passed |
+| **Frontend checks** | Lint, TypeScript, and production build passed |
+| **Hosted browser workflow** | Queued generation, reload/resume, PDF worker, cited highlight, and fixed sidebar passed |
+| **Actual hosted synthesis** | One verified claim, two citations, and a receipt for the tested section 3(p) question |
+| **Receipt verification** | Audit chain and both Merkle proofs passed |
+| **Dossier workflow** | Saved-result lookup, case reference, PDF export, and DOCX export checked |
+| **Sampled local memory** | 8.52 GB observed against the 12 GB target in the recorded workload |
 
-After the Sarvam restoration, 34 dedicated backend TTS tests, 35 existing local-inference/startup/contract checks, 28 frontend unit tests and 6 production-browser tests passed. The real speech case currently verifies the missing-key response: this checkout has no `SARVAM_API_KEY`, so genuine provider audio has **not** yet been verified. See [the speech verification record](eval/results/sarvam-tts.json).
+The tested hosted question completed its request pipeline in **10,216 ms**. The [verification report](docs/VERIFICATION_REPORT.md) records the test conditions, methods, and results.
 
-Routing recognition is not factual-answer accuracy. Retrieval precision at configured depth is not final claim citation precision. The memory run used 23 samples over approximately 75 seconds; it can miss transients and may double-count shared allocations. Repeat with the actual workload after runtime/model changes.
-
-**Run automated checks:**
+### Run the Checks
 
 ```sh
-# Backend checks; Docker services must be available.
+# Backend checks through the local Compose environment.
 make test
 make lint
 make typecheck
 
-# Frontend dependencies and checks.
+# Frontend checks.
 npm --prefix frontend ci
 npm --prefix frontend test
 npm --prefix frontend run lint
@@ -533,96 +470,72 @@ npm --prefix frontend run build
 (cd frontend && npx playwright install chromium)
 npm --prefix frontend run test:e2e
 
-# Routing and retrieval evaluation.
+# Recorded routing and retrieval evaluation.
 docker compose exec -T backend python -m app.routing_eval
 make eval
 ```
 
-`make test` stops the API, runs isolated maintenance tests and restores the API. HTTP fixtures use explicit mock mode while database invariants exercise the test database/corpus. These tests do not substitute for actual model inference. Run fixture and live browser suites sequentially.
-
-**Run connected acceptance:**
+### Connected Acceptance
 
 ```sh
-# Optional host environment used by the acceptance scripts.
 make install PYTHON=python3.12
 curl --fail http://localhost:8080/v1/health
 .venv/bin/python scripts/check_live.py
 .venv/bin/python scripts/run-browser-tests.py
-
-# In a second terminal while running representative queries:
 .venv/bin/python scripts/check_memory.py --seconds 75
 ```
 
-The live script reads the configured demo key without printing it. It creates real labelled shared history; delete only those test conversations after review. The browser checks use the production app and verify actual PDF highlight pixels and bundled-worker requests.
-
-Full step-by-step tests, reasons and expected results are in the [solution and testing guide](docs/PRAMANA_SOLUTION_AND_TESTING_GUIDE.docx) and [user test guide](docs/USER_TEST_GUIDE.md). Recorded evidence and limitations are in the [verification report](docs/VERIFICATION_REPORT.md).
+The [user testing guide](docs/USER_TEST_GUIDE.md) and [solution and testing document](docs/PRAMANA_SOLUTION_AND_TESTING_GUIDE.docx) describe the connected workflows in detail. Maintenance tests temporarily stop the local API and restore it afterward.
 
 ---
 
-<a id="feature-tiers--status"></a>
-## 🚦 Feature Tiers & Status
+<a id="prototype-capabilities"></a>
+## 🚦 Prototype Capabilities
 
-| Tier | Scope and current status |
-|------|--------------------------|
-| **P0: connected core** | Local generation/translation/embeddings, real source retrieval, claim checks, refusals, receipts, production PDF viewer and shared history are connected. Live dense retrieval remains pending corpus repair and promotion. |
-| **P1: research tools** | Classification, draft patent indicators, unassessed ABS checklist, TK seed matching/query pack, case dossiers, coverage and weekly source staging are implemented with explicit limits. |
-| **P2: remaining work** | Complete reviewed corpus coverage, broader answer-quality evaluation, confidence calibration, comprehensive prior-art search, local speech recognition and Unicode PDF fonts. Hosted text inference, live TKDL and external professional-response delivery are not connected. |
+| Layer | Connected capabilities |
+|-------|------------------------|
+| **Research core** | Source retrieval, structured generation, claim verification, date/jurisdiction filtering, and citations |
+| **Decision tools** | Adaptive classification, patent research indicators, ABS checklists, and traditional knowledge matching |
+| **Research continuity** | Conversations, saved results, case references, and dossier exports |
+| **Evidence inspection** | Source library, PDF highlights, receipts, and membership verification |
+| **Source governance** | Coverage records, weekly change checking, staged review, evaluation, and approval-controlled promotion |
+| **Delivery** | Production PWA, local Compose workspace, and hosted ZeroGPU execution |
 
-### Build Order
-
-```text
-Connected local app and source-backed answers
-  → repair extraction, OCR/layout and highlight findings
-  → re-ingest a fresh Qwen stage
-  → quality review and golden evaluation
-  → actual named approval of a passing report
-  → promote compatible corpus
-  → broaden answer-quality and multilingual acceptance
-```
-
-**M1** may demonstrate extractive cards. **M2** requires an answerable question to produce schema-valid, verified synthesized claims with supporting citations end to end. One demonstrated synthesis path does not complete every corpus or accuracy requirement.
+These layers share the project's typed interfaces and evidence records, allowing a user to move from a question to a source-linked dossier through one connected application.
 
 ---
 
 <a id="api-surface"></a>
 ## 🔌 API Surface
 
-All paths include `/v1`. Query responses use SSE; most other endpoints return JSON or files. Interactive FastAPI docs are at [localhost:8000/docs](http://localhost:8000/docs).
+Research routes use the `/v1` prefix. The hosted profile queues generation through Gradio, while the local profile streams query stages through SSE.
 
 | Method | Endpoint | Purpose |
 |--------|----------|---------|
-| `GET` | `/v1/health` | Model/corpus readiness and compatibility |
-| `POST` | `/v1/query` | Question, optional saved conversation and stage/result stream |
-| `POST` | `/v1/conversations` | Create a shared-workspace conversation |
-| `GET` | `/v1/conversations` | List unexpired conversations |
-| `GET` | `/v1/conversations/{conversation_id}` | Resume conversation and saved results |
-| `DELETE` | `/v1/conversations/{conversation_id}` | Delete conversation and dependent content |
-| `GET` | `/v1/requests/{request_id}` | Load an actual saved result |
-| `GET` | `/v1/case-file` | Read shared case references |
-| `POST` | `/v1/case-file/{request_id}` | Add a saved result to Cases |
-| `DELETE` | `/v1/case-file/{request_id}` | Remove a case reference |
-| `PUT` | `/v1/case-file` | Reorder case references |
-| `POST` | `/v1/classify` | Next adaptive prompt or provisional classification |
-| `POST` | `/v1/patent-risk` | Draft cited patent indicators |
-| `POST` | `/v1/abs-check` | Cited ABS research checklist |
-| `POST` | `/v1/tk-radar` | Botanical normalization, seed matches and query pack |
-| `POST` | `/v1/dossier` | Export actual saved results |
-| `GET` | `/v1/documents` | Indexed source documents |
-| `GET` | `/v1/documents/{doc_id}/pdf` | Source PDF; accepts a pinned `corpus_version` |
-| `GET` | `/v1/spans/{evidence_id}` | Resolve an evidence span |
-| `GET` | `/v1/corpus/versions` | Corpus versions |
-| `GET` | `/v1/corpus/coverage` | Real topic coverage and gaps |
+| `GET` | `/v1/health` | Runtime, model, and corpus readiness |
+| `POST` | `/v1/query` | Local query stage/result stream |
+| `POST / GET` | `/v1/conversations` | Create and list conversations |
+| `GET / DELETE` | `/v1/conversations/{id}` | Resume or delete a conversation |
+| `GET` | `/v1/requests/{request_id}` | Retrieve a saved result |
+| `GET / PUT` | `/v1/case-file` | Read or reorder case references |
+| `POST / DELETE` | `/v1/case-file/{request_id}` | Add or remove a selected result |
+| `POST` | `/v1/classify` | Adaptive prompt or provisional product pathway |
+| `POST` | `/v1/patent-risk` | Source-linked patent indicators |
+| `POST` | `/v1/abs-check` | Statutory research checklist |
+| `POST` | `/v1/tk-radar` | Name normalization, seed matches, and query pack |
+| `POST` | `/v1/dossier` | Export saved results |
+| `GET` | `/v1/documents` | Source document library |
+| `GET` | `/v1/documents/{doc_id}/pdf` | Version-pinned PDF |
+| `GET` | `/v1/spans/{evidence_id}` | Resolve evidence |
+| `GET` | `/v1/corpus/versions` | Corpus version records |
+| `GET` | `/v1/corpus/coverage` | Topic coverage records |
 | `GET` | `/v1/receipts/{receipt_id}` | Receipt details |
-| `POST` | `/v1/receipts/{receipt_id}/verify` | Verify chain and membership proofs |
-| `POST` | `/v1/speech/asr` | Explicit local-ASR-unavailable response |
-| `POST` | `/v1/speech/tts` | Sarvam answer read-aloud as validated WAV audio |
-| `POST` | `/v1/escalations` | Store a local request-linked review ticket |
-| `GET` | `/v1/escalations` | Administrator ticket listing |
-| `GET` | `/v1/eval/latest` | Latest recorded evaluation |
+| `POST` | `/v1/receipts/{receipt_id}/verify` | Chain and membership checks |
+| `POST` | `/v1/speech/tts` | Configured Sarvam WAV read-aloud |
+| `POST / GET` | `/v1/escalations` | Create a review ticket or access the admin listing |
+| `GET` | `/v1/eval/latest` | Recorded evaluation output |
 
-`X-Demo-Key` is required for history, saved-result reads, case references, dossiers and administrator escalation listing. `/v1/query` requires it when `conversation_id` is supplied. Other local research/proof endpoints do not provide individual account authentication.
-
-Contracts are generated from backend schemas into [`contracts/openapi.yaml`](contracts/openapi.yaml) and [`frontend/src/api/types.gen.ts`](frontend/src/api/types.gen.ts). After schema changes:
+Backend schemas generate [OpenAPI](contracts/openapi.yaml) and [frontend types](frontend/src/api/types.gen.ts). Local interactive API documentation is available at `http://localhost:8000/docs`.
 
 ```sh
 make contracts
@@ -634,32 +547,28 @@ npm --prefix frontend run types:generate
 <a id="quick-start"></a>
 ## 🚀 Quick Start
 
-PRAMANA uses the existing Dockerfiles and Compose stack: **PostgreSQL + backend + frontend + weekly source monitor**, with **native Ollama on the Mac**.
+### Hosted Prototype
 
-The free judging demo is live on **Hugging Face ZeroGPU** at [RJ8307/pramana-sih](https://huggingface.co/spaces/RJ8307/pramana-sih). The [ZeroGPU deployment guide](docs/HUGGING_FACE_DEPLOYMENT.md) explains the upload bundle, real corpus transfer, verified hosted checks and remaining limits. This profile preserves the website and citation pipeline, runs Qwen through PyTorch on ZeroGPU, and uses temporary SQLite instead of hosted PostgreSQL or paid disk. History and receipts reset on server restart. The Mac defaults remain native Ollama and PostgreSQL. Hosted Sarvam speech requires its private Space secret.
+Open **[PRAMANA on Hugging Face](https://huggingface.co/spaces/RJ8307/pramana-sih)**. The Space runs the production website, Qwen inference, citation verification, and session research storage on hosted infrastructure.
 
-### 1. Prerequisites
+The [ZeroGPU deployment guide](docs/HUGGING_FACE_DEPLOYMENT.md) explains how to build the actual corpus seed and application upload bundle.
 
-- A 16 GB MacBook is the target machine; allow headroom for macOS and the browser.
-- Docker Desktop with Docker Compose.
-- Native Ollama and enough disk space for models, images, PDFs and the database.
-- Network access for initial dependency/model downloads and official-source checks.
-- Python 3.12 and a compatible Node/npm installation only if running host development/test tools.
+### Local Mac Workspace
 
-### 2. Configure
+Use a 16 GB MacBook, Docker Desktop with Compose, and native Ollama. Python 3.12 and Node/npm support the optional host development and testing workflow.
 
-Run commands from the project root. Preserve an existing `.env`; initialize it only if missing:
+From the project root:
 
 ```sh
+# Preserve an existing environment file.
 test -f .env || cp .env.example .env
 
+# Install the selected native models.
 ollama pull qwen3:4b
 ollama pull qwen3-embedding:0.6b
 ```
 
-Set distinct random `POSTGRES_PASSWORD`, `APP_DB_PASSWORD`, `INGEST_DB_PASSWORD` and `DEMO_KEY` values in `.env`. Generate each separately, for example with `openssl rand -hex 24`. Host Python database URLs must use the matching passwords. Compose injects the container database addresses.
-
-Keep these settings:
+Set distinct random `POSTGRES_PASSWORD`, `APP_DB_PASSWORD`, `INGEST_DB_PASSWORD`, and `DEMO_KEY` values in `.env`. Match the host database URLs to those credentials. Compose provides the container connection addresses.
 
 ```dotenv
 LLM_MODEL=qwen3:4b
@@ -675,25 +584,14 @@ WORKSPACE_ID=shared-demo
 HISTORY_RETENTION_DAYS=30
 ```
 
-For Sarvam read-aloud, add the following to the root `.env`. Keep the actual key out of Git and out of any `VITE_` variable:
-
-```dotenv
-SARVAM_API_KEY=<your-existing-sarvam-key>
-SARVAM_TTS_MODEL=bulbul:v3
-SARVAM_TTS_SPEAKER=shubh
-SARVAM_TTS_TIMEOUT_S=60
-```
-
-After changing the key, recreate the backend with `docker compose up -d --force-recreate backend` so Compose loads the new environment. No cloud text-inference key is required. Configure native Ollama for one parallel request and at most two loaded models:
+Configure native Ollama concurrency, then restart the Ollama app:
 
 ```sh
 launchctl setenv OLLAMA_NUM_PARALLEL 1
 launchctl setenv OLLAMA_MAX_LOADED_MODELS 2
 ```
 
-Restart the Ollama app so it inherits those settings. Alternatively, when running the native server from a terminal, start one instance with those environment values. Keep unrelated large models unloaded during representative PRAMANA queries.
-
-### 3. Run
+Start the workspace:
 
 ```sh
 docker compose up --build -d
@@ -701,25 +599,46 @@ docker compose ps
 curl --fail http://localhost:8080/v1/health
 ```
 
-Open [localhost:8080](http://localhost:8080). Compose points the backend at `http://host.docker.internal:11434`. Do not start a second Ollama inside Docker. The local NLI verifier downloads to a persistent cache on its first startup; allow that initialization to finish.
+Open `http://localhost:8080`. Under Saved conversations, enter the configured demo key to connect the shared local workspace. A new database is populated through the reviewed corpus ingestion workflow described above.
 
-Open **Saved conversations**, enter the configured `DEMO_KEY` and connect the shared workspace. Create a conversation and ask an indexed question. All authorized demo users can see this history.
+### Configure Sarvam Read-Aloud
 
-**Fresh database:** startup creates roles/schema but does not invent a live corpus. Ingest, review, obtain actual approval of a passing report and promote before expecting research answers. The current staged corpus is failing review, so a fresh install may need the documented extraction repairs before its corpus can be promoted.
+Use the existing Sarvam account key in the backend environment or the hosted Space's private Secrets:
 
-### 4. Evaluate
-
-```sh
-make test
-make lint
-make typecheck
-make eval
+```dotenv
+SARVAM_API_KEY=<your-sarvam-key>
+SARVAM_TTS_MODEL=bulbul:v3
+SARVAM_TTS_SPEAKER=shubh
+SARVAM_TTS_TIMEOUT_S=60
 ```
 
-Then run frontend and connected acceptance checks from [Evaluation Harness](#evaluation-harness). `make eval` measures retrieval against the current live version; it is not synthesized-answer faithfulness evaluation. Promotion additionally requires passing staged quality review and exact named approval.
+After changing the local `.env`, reload the backend environment:
 
-> [!NOTE]
-> `make test`, ingestion/resume and promotion use maintenance isolation and restore the API afterward. The API is temporarily unavailable during those operations. `docker compose down` stops the services; `docker compose down -v` deletes named database/model-cache volumes and must not be used as a routine restart.
+```sh
+docker compose up -d --force-recreate backend
+```
+
+### Build a Hosted Bundle
+
+With the local live corpus available:
+
+```sh
+make install PYTHON=python3.12
+npm --prefix frontend ci
+
+PRAMANA_BUNDLE_TAG="$(date +%Y%m%dT%H%M%S)"
+PRAMANA_SEED_DIR="deploy/data/space-seed-${PRAMANA_BUNDLE_TAG}"
+PRAMANA_UPLOAD_DIR="deploy/data/space-upload-${PRAMANA_BUNDLE_TAG}"
+
+PYTHONPATH=backend .venv/bin/python scripts/export-space-seed.py \
+  --from-compose --output "$PRAMANA_SEED_DIR"
+
+.venv/bin/python scripts/build-space.py \
+  --seed "$PRAMANA_SEED_DIR" --output "$PRAMANA_UPLOAD_DIR" \
+  --archive-assets
+```
+
+The prepared bundle contains the entry point, metadata, dependencies, backend, production frontend, corpus snapshot, and matching source PDFs. Follow the deployment guide to publish that bundle to the Space.
 
 ---
 
@@ -727,107 +646,95 @@ Then run frontend and connected acceptance checks from [Evaluation Harness](#eva
 ## 🗂️ Repo Layout
 
 ```text
-README.md                         Project overview, setup and verification
+README.md                         Project overview and setup
 PRAMANA_IMPLEMENTATION_PLAN.md     Canonical requirements and acceptance
-docker-compose.yml                Local services and memory limits
-Makefile                          Development, ingestion and evaluation commands
+Dockerfile                        Hosted Docker profile
+docker-compose.yml                Local Mac services
+Makefile                          Development and maintenance commands
 backend/
-  Dockerfile                      Backend image
-  pyproject.toml                  Python dependencies and checks
-  app/api/                        Actual HTTP endpoints
-  app/orchestrator/               Typed pipeline and routing
-  app/retrieval/                   Embeddings, lexical search and evidence packs
-  app/generation/                 Local Ollama and claim schema
-  app/verification/               NLI, guards and confidence
-  app/ingest/                      Fetch, parsing, quality, monitoring and promotion
-  app/history/                    Shared persistence and expiry
-  app/audit/                      Receipts, chain and Merkle proofs
-  app/rules/                      Classification, IP and ABS research logic
-  app/tk/                         Botanical data, seed matching and query pack
-  app/render/                     Saved-result dossier exports
+  app/api/                        Research interfaces
+  app/orchestrator/               Typed query pipeline and routing
+  app/retrieval/                   Search and evidence packs
+  app/generation/                 Ollama and hosted Qwen adapters
+  app/verification/               NLI, guards, and confidence
+  app/ingest/                      Extraction, review, monitoring, and promotion
+  app/history/                    Conversations, results, and expiry
+  app/audit/                      Receipts, chain, and Merkle proofs
+  app/rules/                      Classification, patent, and ABS logic
+  app/tk/                         Botanical data, matching, and query builder
+  app/render/                     Dossier exports
   alembic/versions/                Database migrations
-  tests/                          Unit, contract and database invariant tests
+  tests/                          Unit, contract, and invariant tests
 frontend/
-  Dockerfile                      Production frontend image
-  src/                            React pages, components, state and API client
-  e2e/                            Fixture and live production browser tests
-contracts/                        Generated OpenAPI and labelled test fixtures
-corpus/                           Source manifest, coverage map and raw artifacts
-eval/                             Golden sets and generated measured results
-scripts/                          Live acceptance, browser, memory and maintenance tools
-docs/                             Testing guide, verification report and UI preview
+  src/                            React interface, state, and API clients
+  e2e/                            Production browser workflows
+contracts/                        Generated API contract and test fixtures
+corpus/                           Source manifest and coverage metadata
+deploy/huggingface/                ZeroGPU entry point and dependencies
+eval/                             Golden sets and evaluation harness
+scripts/                          Acceptance and deployment builders
+docs/                             Deployment, testing, and verification records
 ```
 
-`docs/IMPLEMENTATION_PLAN.md` points to the root plan. Generated corpus/evaluation artifacts may be Git-ignored; preserve them explicitly when handing off verification evidence.
+The root plan is canonical; `docs/IMPLEMENTATION_PLAN.md` points to it.
 
 ---
 
 <a id="tech-stack"></a>
 ## 📚 Tech Stack
 
-| Concern | Actual choice |
-|---------|---------------|
-| Frontend | React 19, TypeScript, Vite, React Router, TanStack Query and Zustand |
-| UI / diagrams | CSS/Tailwind tooling, React Flow, Dagre and Recharts |
-| Source viewer | PDF.js with bundled production worker |
-| API | FastAPI, Pydantic, Uvicorn, REST and SSE |
-| Orchestration | Plain typed async generator; no LangGraph dependency |
-| Database | PostgreSQL 16, pgvector, full-text search, pg_trgm, SQLAlchemy and Alembic |
-| Embeddings | Native Ollama `qwen3-embedding:0.6b`, 1,024 dimensions |
-| Generator / translation | Native Ollama `qwen3:4b`, JSON Schema claims, temperature 0, context at most 8K |
-| Reranker | Disabled |
-| Verification | Local mDeBERTa NLI and deterministic guards |
-| Speech | Sarvam Bulbul v3 TTS through the backend; ASR remains explicitly unavailable |
-| PDF extraction | PyMuPDF, legal-section parsing and stored source coordinates |
-| Exports | Markdown, python-docx and ReportLab from actual saved results |
-| Testing | pytest, Ruff, mypy, Vitest, Testing Library, Playwright and live acceptance scripts |
-| Deployment | Mac Compose, or hosted Docker app + PostgreSQL; Ollama runs on the selected machine |
+| Concern | Technology |
+|---------|------------|
+| **Frontend** | React 19, TypeScript, Vite, React Router, TanStack Query, Zustand |
+| **Presentation** | CSS/Tailwind tooling, React Flow, Dagre, Recharts |
+| **Multilingual UI** | i18next and language-specific font assets |
+| **Source viewer** | PDF.js with bundled worker |
+| **API** | FastAPI, Pydantic, Uvicorn |
+| **Orchestration** | Typed asynchronous generator |
+| **Local inference** | Native Ollama, Qwen3 4B, Qwen3 Embedding 0.6B |
+| **Hosted inference** | PyTorch, Transformers, schema token constraints, Gradio, Hugging Face ZeroGPU |
+| **Verification** | mDeBERTa NLI and deterministic guards |
+| **Local storage** | PostgreSQL 16, pgvector, full-text search, pg_trgm, SQLAlchemy, Alembic |
+| **Hosted storage** | SQLite, FTS5/BM25, checked corpus seed |
+| **Read-aloud** | Configurable Sarvam Bulbul v3 |
+| **Extraction** | PyMuPDF and legal-section parsing |
+| **Exports** | Markdown, python-docx, ReportLab |
+| **Quality tooling** | pytest, Ruff, mypy, Vitest, Testing Library, Playwright |
+| **Delivery** | Docker Compose, Nginx, PWA assets, ZeroGPU Space |
 
 ---
 
 <a id="demo-script"></a>
 ## 🎬 Demo Script
 
-1. **Check readiness:** open `/v1/health` and inspect model readiness, corpus version and embedding compatibility. A running UI alone is insufficient.
-2. **Connect history:** enter the configured demo key under Saved conversations and start a labelled demo conversation.
-3. **Ask a supported question:** select India/English and ask, **“Summarize section 3(p) of the Patents Act and its introductory section.”** Confirm verified claims and actual evidence IDs; generation can take time on the local model.
-4. **Inspect a citation:** open the source drawer and confirm the PDF's pinned version, physical page and highlighted passage.
-5. **Verify the receipt:** run proof verification and confirm chain and corpus-membership checks.
-6. **Ask a follow-up:** **“What does that exclusion cover?”** Inspect fresh supporting citations, then reload and resume the conversation.
-7. **Exercise refusals:** ask **“What is the weather today?”** for out-of-scope, then explicitly ask about the unindexed **Patent Cooperation Treaty** for no-evidence. Neither should borrow an unrelated supported answer.
-8. **Use the research tools:** complete four classification groups, inspect provisional/draft status, then check draft patent indicators and unassessed ABS applicability.
-9. **Inspect TK limits:** normalize an ingredient and view the seed match/query pack; confirm no live TKDL-search claim appears.
-10. **Save and export:** add the real answer to Cases, reload and export Markdown/DOCX or a supported-character PDF. Compare output with the saved result.
-11. **Show transparency:** open Evidence and Evaluation to discuss actual coverage, measured results and unmeasured faithfulness.
-12. **Check Sarvam speech:** configure the backend key and press Listen on an actual answer. Inspect `/v1/speech/tts` for `audio/wav`, listen to playback, and stop it mid-answer. Missing keys and provider errors should be visible; ASR remains unavailable.
-
-Broad traditional-knowledge phrasing can still refuse for low confidence on the current index. Do not replace that failure with a fixture or describe a source extract as verified synthesis.
+1. **Open the prototype** and select India, English, and the desired research date.
+2. **Ask a cited question:** “What does section 3(p) of the Patents Act say about traditional knowledge?”
+3. **Inspect the answer:** review the claim status and supporting evidence IDs.
+4. **Open a citation:** inspect the source passage, PDF page, and highlight.
+5. **Verify the receipt:** run the chain and corpus-membership checks.
+6. **Continue the conversation:** ask a follow-up, then reload and resume the saved research.
+7. **Classify a product:** provide purpose, claims, administration, classical relationship, and ingredient details.
+8. **Explore related tools:** examine patent indicators, the ABS checklist, and classical seed matches.
+9. **Build a case file:** select an actual saved answer, organize the results, and export a dossier.
+10. **Inspect the research collection:** open Evidence and Evaluation to review sources and recorded measurements.
+11. **Use configured read-aloud:** press Listen to play a displayed answer through Sarvam.
 
 ---
 
-<a id="risks--things-to-verify"></a>
-## ⚠️ Risks & Things to Verify
+<a id="research-workflow"></a>
+## 🌱 Research Workflow
 
-- **Corpus completion:** repair missing text, legal-rule parsing, OCR/layout and highlight coordinates, then re-ingest and obtain actual approval before promotion.
-- **Coverage/currentness:** indexed-document status does not prove every operative provision or amendment is present. Source-check timeouts leave currentness unconfirmed.
-- **Confidence and accuracy:** current confidence is heuristic. The small routing/retrieval sets do not establish comprehensive or multilingual answer correctness.
-- **Classification/IP/ABS:** provisional categories, draft scores and unassessed checklists need qualified source and fact review.
-- **TKDL/prior art:** seed matches and query packs do not establish novelty or perform an authorized TKDL search.
-- **Memory:** repeat representative measurements with both selected models and the configured context. The recorded 8.52 GB is a sampled workload result, not a universal guarantee.
-- **History/privacy:** authorized users share the workspace; scrubbers do not anonymize all prose. Verify independent expiry and separate ticket/audit retention.
-- **Exports:** DOCX/Markdown preserve Unicode. PDF export rejects unsupported built-in-font characters explicitly; translated dossier output is not implemented.
-- **Speech:** real Sarvam playback requires a valid backend key and network access. Test WAV playback, long-answer chunks, cancellation and provider failures. ASR remains unavailable.
-- **Production UI:** test the bundled PDF worker, pinned cited page/highlight, fixed desktop navigation and mobile layout after changes.
-- **Mode:** production requires `MOCK_MODE=0` and `VITE_API_MODE=live`. Label fixture tests; never use them as proof of working inference.
-- **Evidence:** record actual versions, commands, results and limitations. Never invent reviewer approval, answers, source coverage or evaluation numbers.
+**Start with the question. Follow the evidence. Keep the findings.**
+
+Use Classify to organize product facts, Ask Sahayak to explore indexed provisions, and the Intellectual Property, ABS, and Traditional Knowledge tools to investigate related research questions. Open citations as you review each finding, then collect the useful results in Cases.
+
+A dossier brings selected answers, source text, and receipt references together for discussion, documentation, and further review. The source library and audit tools keep the research connected to the material behind it.
 
 ---
 
 <div align="center">
 
-*Informational research support. Qualified legal and regulatory review is required.*
-
----
+**[Explore PRAMANA](https://huggingface.co/spaces/RJ8307/pramana-sih)**
 
 *PRAMANA · IP-SAKTI Sahayak · SIH 2026 / PS SIH26045*
 
